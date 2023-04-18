@@ -10,6 +10,8 @@ import gzip
 import io
 import sys
 import zipfile
+import os
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from typing import ContextManager, Optional
@@ -164,3 +166,21 @@ def open_or_yield(
 
     with open(filename, mode) as opened_file:
         yield opened_file
+
+def is_dir(file):
+    """
+    Returns boolean whether a given file is a directory
+    """
+    return os.path.isdir(file)
+
+def is_zip(file):
+    """
+    Returns boolean whether a given file is a .zip archive
+    """
+    return zipfile.is_zipfile(file)
+
+def exists_in_os(file):
+    """
+    Returns boolean whether a given file exists in the user's OS
+    """
+    return os.path.exists(file)
