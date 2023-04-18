@@ -167,6 +167,69 @@ def open_or_yield(
     with open(filename, mode) as opened_file:
         yield opened_file
 
+def find_files_in(
+        filepath,
+        name_ext = None,
+        file_select = None,
+        multiple_ok = False,
+        none_ok = True
+):
+    """
+    Finds a single file within a .zip, directory, or returns standalone. Assumes path is valid.
+
+    Args:
+        filepath: The name of the path to search for a file
+        name_ext: The extension used to narrow file search, e.g. .csv or .dat
+        file_select: A keyword used to narrow file search, e.g. "ds135"
+        multiple_ok: Multiple files are allowed
+        none_ok: No files are allowed
+    
+    Raises:
+        FileExistsError: If the provided filepath does not exist.
+        ValueError: If the provided filepath contains more than one fileor filepath itself is more than one item, i.e. the search is too broad.
+    """
+
+    if len([filepath]) != 1:
+        raise ValueError(f"{filepath} contains more than one path, provide a single path for file parsing.")
+
+    if is_zip(filepath):
+        f = zipfile.ZipFile(filepath)
+        file_names = [name for name in f.namelist()]
+    elif is_dir(filepath):
+        filepath = Path(filepath)
+        file_names = [f.name for f in filepath.iterdir()]
+    else: # standalone file
+        if not name_ext in filepath:
+            if none_ok:
+                file_names = ""
+            else:
+                raise ValueError(f"Expected {filepath} to match extension .{name_ext}, but got {Path(filepath).suffix}")
+        
+        return Path(filepath)
+    
+    if file_select is not None and name_ext is not None:
+        name_ext_matches = [s for s in file_names if re.findall(name_ext + "$", s)]
+        file_names = [s for s in name_ext_matches if re.findall(file_select, s)]
+    elif name_ext is not None:
+        matches = [s for s in file_names if re.findall(name_ext + "$", s)]
+        file_names = matches
+    elif file_select is not None:
+        matches = [s for s in file_names if re.findall(file_select, s)]
+        file_names = matches
+
+    if not none_ok and len(file_names) == 0:
+        raise ValueError(f"Did not find any files matching extension {name_ext} or matching the file_select {file_select} in the provided file path.")
+    
+    if not multiple_ok and len(file_names) > 1:
+
+        names = [name + "\n" for name in file_names]
+        
+        raise ValueError(f"Multiple files found, please use the file_select and name_ext arguments to specify which file you want to load: \n \
+                         {names}")
+    else: # return the standalone file path, or the first element from the list of file_names (in a list with len == 1)
+        return str(file_names) if type(file_names) != list else str(file_names[0])
+    
+
 def is_dir(file):
     """
     Returns boolean whether a given file is a directory
