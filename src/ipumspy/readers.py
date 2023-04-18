@@ -437,3 +437,165 @@ def read_extract_description(extract_filename: FilenameType) -> dict:
         return yaml.safe_load(data)
     except yaml.error.YAMLError:
         raise ValueError("Contents of extract file appear to be neither json nor yaml")
+
+def read_nhgis_fwf(data_file,
+                   file_select = None,
+                   do_file = None,
+                   verbose = True,
+                   *kwargs
+                ):
+    
+    file = find_files_in(
+        data_file,
+        name_ext="dat",
+        file_select=file_select,
+        multiple_ok=False,
+        none_ok=False
+    )
+
+    cb_files = find_files_in(
+        data_file,
+        name_ext="txt",
+        multiple_ok=True,
+        none_ok=True
+    )
+
+    if verbose:
+        
+        print("Codebook to be implemented.")
+
+    if is_zip(data_file):
+    # Cannot use fixed width format on a ZIP file
+    # Must extract ZIP contents to allow for default format specification
+        fwf_dir = tempfile.TemporaryDirectory()
+
+        with ZipFile(data_file, 'r') as zip_ref:
+            zip_ref.extractall(fwf_dir.name)
+
+        # Construct path to the extracted file
+        file_path = os.path.join(fwf_dir.name, file)
+
+    elif is_dir(data_file):
+        # Construct path to the file within the directory
+        file_path = os.path.join(data_file, file)
+    
+    do_file = (file_path.rstrip(".dat") + ".do") or do_file # removes .dat and replaces with .do
+
+    if do_file is None:
+        warn_default_fwf_parsing()
+    elif not exists_in_os(do_file):
+        if do_file is not None:
+            print(f"Could not find the provided do_file, {do_file}. \
+                             Make sure the provided do_file exists or use 'col_positions' to specify \
+                             column positions manually.")
+            warn_default_fwf_parsing()
+        else:
+            print(f"Could not find a .do file associated with the provided file. \
+                  Use the 'do_file' argument to provide an associated .do file \
+                  or use 'col_positions' to specify column positions manually.")
+            warn_default_fwf_parsing()
+    elif exists_in_os(do_file):
+        
+        colspecs, names, dtype, replace_list = parse_nhgis_do_file(do_file)
+
+        df = pd.read_fwf(file_path, colspecs=colspecs, names=names, dtype=dtype)
+
+        for column in replace_list:
+            # adjust for implicit decimal
+            df[column] = df[column] / 10
+        
+        return df
+
+
+def warn_default_fwf_parsing():
+
+    print("Data loaded from NHGIS fixed-width files may not be consistent with " \
+        "the information included in the data codebook when parsing column " \
+        "positions manually.")
+
+def parse_nhgis_do_file(file):
+    """
+        Extract relevant information from .do file in order to parse .dat file for
+        read_nhgis_fwf(). Specifically, extracts column names, positions, dtypes,
+        and takes note of implicit decimals.
+
+        Args:
+            file: The path to a .do file, used to parse a similarly-named .dat file
+            (if name has been unchanged since download).
+
+        Raises:
+            OSError: If the passed path does not exist
+
+        Returns:
+            colspecs, names, dtype, and replace_list. These are specifications
+            for column widths, column names, and data type by column (passed directly)
+            into pd.read_fwf(), as well as list of columns that need to be "replaced"
+            with their implicit decimal value (i.e. / 10)
+        """
+    
+    # initialization of variables to be returned
+    colspecs = []
+    names = []
+    dtype = {}
+    replace_list = []
+
+    # data type conversions, in dictionary form
+    # Stata data type : Python data type
+    # Note: Stata supports many types of numerics, Python does not
+    var_type_conversion = {"int": "int", "byte": "float", "long": "float", "float": "float", "double": "float", "str": "str"}
+
+    # open file
+    do = open(file, "r")
+
+    # booleans to identify what section of the .do file we're in
+    spec_section = False
+    replace_section = False
+
+    # parse file
+    for line in do:
+
+        # "quietly infix" precedes column specification section
+        if "quietly infix" in line:
+            spec_section = True
+            continue # move to next line, start parsing column specs
+
+        # "replace" is followed by the first column with an implicit decimal
+        if "replace" in line:
+            replace_section = True
+            # don't continue, we want to parse this line since it contains important info
+        
+        if spec_section:
+            # "using" marks the end of the spec_section
+            if "using" in line:
+                spec_section = False
+                continue
+
+            # specs = [stata_var_type, var_name, col_width]
+            specs = line.rstrip("///\n").split()
+
+            VAR_TYPE = var_type_conversion[specs[0]]
+            VAR_NAME = specs[1].upper()
+            col_width = specs[2].split("-") # splits upper and lower bound into separate strings
+
+            dtype[VAR_NAME] = VAR_TYPE # key is the variable name, value is the Python type of that variable
+            names.append(VAR_NAME)
+            colspecs.append(((int(col_width[0]) - 1), int(col_width[1]))) # give upper and lower bound of column width
+
+        if replace_section:
+
+            # if line is empty, no more variables to replace
+            if line.isspace():
+                replace_section = False
+                break # exit the loop, nothing more to parse
+
+            # get the name of the variable to be replaced from that line;
+            # assumes that the variable being replaced has one implicit decimal, i.e.
+            # that the variable must be divided by 10 across all observations.
+            # This assumption is seen as safe for NHGIS data.
+            var_name = line.strip().split("=")[0].rstrip().split(" ")[1].upper()
+
+            replace_list.append(var_name)
+            
+        
+    return colspecs, names, dtype, replace_list
+
