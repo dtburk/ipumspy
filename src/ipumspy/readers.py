@@ -6,13 +6,17 @@
 """
 Functions for reading and processing IPUMS data
 """
+import io
+import os
 import copy
 import json
 import re
 import warnings
 import xml.etree.ElementTree as ET
+import tempfile
 from pathlib import Path
 from typing import Iterator, List, Optional, Union, Dict
+from zipfile import *
 
 import pandas as pd
 import numpy as np
@@ -20,7 +24,7 @@ import yaml
 
 from . import ddi as ddi_definitions
 from . import fileutils
-from .fileutils import open_or_yield
+from .fileutils import open_or_yield, find_files_in, get_path_type, is_dir, is_zip, exists_in_os
 from .types import FilenameType
 
 
@@ -437,6 +441,130 @@ def read_extract_description(extract_filename: FilenameType) -> dict:
         return yaml.safe_load(data)
     except yaml.error.YAMLError:
         raise ValueError("Contents of extract file appear to be neither json nor yaml")
+
+def read_nhgis_codebook(
+        data_file: any,
+        show_full: bool = False
+) -> ddi_definitions.NHGISCodebook:
+    """
+    Return an object representing an NHGIS data codebook, used in
+    read_nhgis_csv() to later prompt the user to select among data files
+    if more than one.
+
+    Can be any of the following:
+        * An already opened file (we just yield it back)
+
+    Args:
+        data_file: The path as described above.
+    """
+
+    codebook_lines = ''
+
+    # Open data file, assumed .txt format (check later)
+    with open(data_file, 'r') as f:
+        lines = f.readlines()
+        i = 0
+        for line in lines:
+            codebook_lines += f'{i}: {line}'
+            i += 1
+
+    # Extract the information from each section
+    file_description = "Please see codebook file."
+    data_description = "Please see codebook file."
+    samples_description = "Please see codebook file."
+    ipums_citation = "Steven Manson, Jonathan Schroeder, David Van Riper, Tracy Kugler, and " \
+                     "Steven Ruggles. IPUMS National Historical Geographic Information System: " \
+                     "Version 17.0 [dataset]. Minneapolis, MN: IPUMS. 2022."
+    ipums_conditions = "* REDISTRIBUTION: You will not redistribute the data without permission. \
+                    You may publish a subset of the data to meet journal requirements for accessing \
+                    data related to a particular publication. Contact us for permission for any other \
+                    redistribution; we will consider requests for free and commercial redistribution."
+    ipums_collection = "NHGIS"
+    ipums_doi = "http://doi.org/10.18128/D050.V17.0"
+    raw_codebook = codebook_lines
+
+    cb = ddi_definitions.NHGISCodebook(file_description, 
+                                       data_description, 
+                                       samples_description, 
+                                       ipums_citation, 
+                                       ipums_conditions,
+                                       ipums_collection,
+                                       ipums_doi,
+                                       raw_codebook)
+    
+    if show_full:
+        print(raw_codebook)
+    
+    return cb # return formatted codebook
+
+def read_nhgis(
+        data_file,
+        file_select = None,
+        var_attrs = None, # (R-specific labeling)
+        remove_extra_header = None, # (might want, can elect to have informative header row -- if a user expects header row from NHGIS API)
+        do_file = None,
+        file_type = None,
+        na = None, # (which vals are missing vals? important)
+        col_names = None, # caution
+        locale = None, # n/a? (R-specific? Check pandas docs)
+        verbose = True, # conditions
+
+        # show_col_types = None, # not something we need to implement
+        **kwargs # addt'l key word args for pandas, etc.
+):
+    if not isinstance(data_file, str):
+        raise ValueError("data_file must be a single string.")
+    
+    if file_type is not None and (file_type not in ["csv", "dat"]):
+        raise ValueError("file_type must be one of csv or dat")
+    
+    if len(data_file) == 0:
+        raise ValueError("Expected a data path but got an empty value.")
+
+    # data_file = Path(data_file)
+    
+    if not os.path.exists(data_file):
+        raise ValueError("The data_file provided does not exist.")
+    
+    data_files = find_files_in(
+        data_file,
+        name_ext = file_type if file_type is not None else "csv|dat",
+        multiple_ok=True,
+        none_ok=True
+    )
+
+    has_csv = any(re.search("csv$", f) for f in [data_files])
+    has_dat = any(re.search("dat$", f) for f in [data_files])
+
+    if not has_csv and not has_dat:
+        if file_type is None:
+            msg = ".csv or .dat"
+        else:
+            msg = file_type
+        
+        raise ValueError(f"No {msg} files found in the provided data_file.")
+    
+    elif has_csv and has_dat:
+        raise ValueError(f"Both .csv and .dat files found in the specified data_file. \
+                         Use the file_type argument to specify which file type to load.")
+
+    if has_csv:
+        data = read_nhgis_csv(
+            data_file,
+            file_select = file_select,
+            verbose = verbose,
+            *kwargs
+        )
+    else:
+        data = read_nhgis_fwf(
+            data_file,
+            file_select = file_select,
+            do_file = do_file,
+            verbose = verbose,
+            **kwargs
+        )
+
+    return data # return pandas DataFrame
 
 def read_nhgis_csv(data_file,
                    file_select = None,
