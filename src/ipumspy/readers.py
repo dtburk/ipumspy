@@ -438,6 +438,90 @@ def read_extract_description(extract_filename: FilenameType) -> dict:
     except yaml.error.YAMLError:
         raise ValueError("Contents of extract file appear to be neither json nor yaml")
 
+def read_nhgis_csv(data_file,
+                   file_select = None,
+                   verbose = True,
+                   show_conditions = True,
+                   *kwargs
+                   ):
+
+    """
+        Generate a pd Dataframe from a .csv file, prompt use to select file amongst several,
+        if necessary. 
+        Can be any of the following:
+            * An already opened file (we just yield it back)
+
+        Args:
+            data_file: The path as described above. 
+            Can be one of three options:
+            * Zip containing .dat or .csv files (standard data delivery for NHGIS)
+            * Directory containing .dat or .csv files
+            * Direct path to .dat or .csv file
+
+        Raises:
+            OSError: If the passed path does not exist
+        """
+
+    # File Types: .csv, .txt ("codebook" -- wetware-friendly info, always present, doesn't help parsing),
+    #             .dat (only provided with fixed-width file extracts -- comes with many files, including .txt -- .do file used for parsing) 
+
+    # Reading .dat file, need .do file
+    # Read nhgis can handle .csv and .dat, if .dat look for .do, if .csv just read it
+
+    file = find_files_in(
+        data_file,
+        name_ext="csv",
+        file_select=file_select,
+        multiple_ok=False,
+        none_ok=False
+        )
+    
+    cb_file = find_files_in(
+        data_file,
+        name_ext="txt",
+        file_select=file_select,
+        multiple_ok=True,
+        none_ok=True
+    )
+
+    # cb = read_nhgis_codebook(cb_file)
+
+    if is_zip(data_file):
+    # Cannot use fixed width format on a ZIP file
+    # Must extract ZIP contents to allow for default format specification
+        csv_dir = tempfile.TemporaryDirectory()
+
+        with ZipFile(data_file, 'r') as zip_ref:
+            zip_ref.extractall(csv_dir.name)
+
+        # construct path to the extracted file
+        file_path = os.path.join(csv_dir.name, file)
+    
+    elif is_dir(data_file):
+        # construct path to the file within the directory
+        file_path = os.path.join(data_file, file)
+
+    else: # if data_file is a standalone file, do nothing
+        pass
+
+    df = pd.read_csv(
+        file_path,
+        *kwargs
+    )
+
+    if verbose:
+
+        print("Codebook to be implemented.")
+    
+    if show_conditions:
+
+        print("* REDISTRIBUTION: You will not redistribute the data without permission. \
+                    You may publish a subset of the data to meet journal requirements for accessing \
+                    data related to a particular publication. Contact us for permission for any other \
+                    redistribution; we will consider requests for free and commercial redistribution.")
+
+    return df
+
 def read_nhgis_fwf(data_file,
                    file_select = None,
                    do_file = None,
