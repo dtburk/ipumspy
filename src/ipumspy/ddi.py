@@ -238,6 +238,45 @@ class FileDescription:
             place=elt.find("./ddi:filePlac", namespaces).text,
         )
 
+class NHGISCodebook:
+    """
+    A class representing a TXT codebook downloaded from IPUMS for NHGIS data
+    """
+
+    def __init__(self, file_description, 
+                 data_description, 
+                 samples_description,
+                 ipums_citation,
+                 ipums_conditions,
+                 ipums_collection,
+                 ipums_doi,
+                 raw_codebook) -> None:
+        self.file_description = file_description
+        """FileDescription object"""
+        self.data_description = data_description
+        """list of VariableDescription objects"""
+        self.samples_description = samples_description
+        """list of IPUMS sample descriptions"""
+        self.ipums_citation = ipums_citation
+        """The appropriate citation for the IPUMS extract. Please use it!"""
+        self.ipums_conditions = ipums_conditions
+        """IPUMS terms of use"""
+        self.ipums_collection = ipums_collection
+        """IPUMS collection name"""
+        self.ipums_doi = ipums_doi
+        """"DOI of IPUMS data set"""
+        self.raw_codebook = raw_codebook
+        """Raw codebook with numbered lines"""
+
+    def __str__(self) -> str:
+        
+        rstring = ''
+
+        for var_name in vars(self):
+            rstring += var_name, getattr(self, var_name)
+            rstring += '\n'
+
+        return rstring
 
 @dataclass(frozen=True)
 class Codebook:
