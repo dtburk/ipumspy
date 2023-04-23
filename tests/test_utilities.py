@@ -14,12 +14,12 @@ from ipumspy import readers
 from ipumspy.utilities import tabulate
 
 
-def test_tabulate(fixtures_path: Path):
+def test_tabulate(microdata_fixtures_path: Path):
     """
     Confirm that tabulate functions as expected
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00006.dat.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00006.dat.gz")
     year_info = ddi.get_variable_info("YEAR")
     crosstab_df = tabulate(year_info, data)
 
@@ -27,8 +27,8 @@ def test_tabulate(fixtures_path: Path):
     assert (crosstab_df["counts"]).all() == (np.array([4065, 3603])).all()
     assert (crosstab_df["pct"]).all() == (np.array([0.530125, 0.469875])).all()
 
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00006.dat.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00006.dat.gz")
     month_info = ddi.get_variable_info("MONTH")
     crosstab_df = tabulate(month_info, data)
 

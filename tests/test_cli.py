@@ -30,7 +30,7 @@ def mock_api() -> str:
         p.kill()
 
 
-def test_submit_command(environment_variables, fixtures_path: Path, mock_api: str):
+def test_submit_command(environment_variables, microdata_fixtures_path: Path, mock_api: str):
     """Test that submitting via the CLI works"""
     runner = CliRunner()
     result = runner.invoke(
@@ -40,7 +40,7 @@ def test_submit_command(environment_variables, fixtures_path: Path, mock_api: st
             os.environ.get("IPUMS_API_KEY"),
             "--base-url",
             mock_api,
-            str(fixtures_path / "example_extract_v2.yml"),
+            str(microdata_fixtures_path / "example_extract_v2.yml"),
         ],
     )
     assert (
@@ -49,7 +49,7 @@ def test_submit_command(environment_variables, fixtures_path: Path, mock_api: st
     )
 
 
-def test_convert_command(fixtures_path: Path):
+def test_convert_command(microdata_fixtures_path: Path):
     """
     Test converting an IPUMS data set into parquet
     """
@@ -63,8 +63,8 @@ def test_convert_command(fixtures_path: Path):
                 map(
                     str,
                     [
-                        fixtures_path / "cps_00006.xml",
-                        fixtures_path / "cps_00006.csv.gz",
+                        microdata_fixtures_path / "cps_00006.xml",
+                        microdata_fixtures_path / "cps_00006.csv.gz",
                         tmpdir / "cps_00006.parquet",
                     ],
                 )
@@ -74,6 +74,6 @@ def test_convert_command(fixtures_path: Path):
 
         parquet_df = pd.read_parquet(tmpdir / "cps_00006.parquet")
 
-    df = pd.read_csv(fixtures_path / "cps_00006.csv.gz")
+    df = pd.read_csv(microdata_fixtures_path / "cps_00006.csv.gz")
 
     assert (df == parquet_df).all().all()

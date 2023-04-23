@@ -545,9 +545,9 @@ def test_extract_is_expired(live_api_client: IpumsApiClient):
     assert is_expired == True
 
 
-def test_extract_from_dict(fixtures_path: Path):
+def test_extract_from_dict(microdata_fixtures_path: Path):
     """Ensure extract object can be created from a dict"""
-    with open(fixtures_path / "example_extract_v2.yml") as infile:
+    with open(microdata_fixtures_path / "example_extract_v2.yml") as infile:
         extract = extract_from_dict(yaml.safe_load(infile))
 
     for item in extract:
@@ -584,16 +584,16 @@ def test_extract_from_dict(fixtures_path: Path):
     # if an unsupported api version is specified
     # make sure NotImplementedError is raised
     with pytest.raises(NotImplementedError) as exc_info:
-        with open(fixtures_path / "example_extract.yml") as infile:
+        with open(microdata_fixtures_path / "example_extract.yml") as infile:
             extract = extract_from_dict(yaml.safe_load(infile))
     assert exc_info.value.args[0] == (
         "The IPUMS API version specified in the extract definition is not supported by this version of ipumspy."
     )
 
 
-def test_extract_to_dict(fixtures_path: Path):
+def test_extract_to_dict(microdata_fixtures_path: Path):
     # reconstitute the extract object from pickle
-    with open(fixtures_path / "usa_00196_extract_obj.pkl", "rb") as infile:
+    with open(microdata_fixtures_path / "usa_00196_extract_obj.pkl", "rb") as infile:
         extract = pickle.load(infile)
 
     # export extract to dict
@@ -710,9 +710,9 @@ def test_download_extract_r(live_api_client: IpumsApiClient, tmpdir: Path):
     assert (tmpdir / "usa_00196.R").exists()
 
 
-def test_define_extract_from_json(fixtures_path: Path):
+def test_define_extract_from_json(microdata_fixtures_path: Path):
     """Ensure extract can be created from json file"""
-    extract = define_extract_from_json(fixtures_path / "example_extract_v2.json")
+    extract = define_extract_from_json(microdata_fixtures_path / "example_extract_v2.json")
     for item in extract:
         assert item.collection == "usa"
         assert item.samples == [Sample(id="us2012b")]
@@ -744,19 +744,19 @@ def test_define_extract_from_json(fixtures_path: Path):
     # if an unsupported api version is specified, make sure
     # NotImplementedError is raised
     with pytest.raises(NotImplementedError) as exc_info:
-        extract = define_extract_from_json(fixtures_path / "example_extract.json")
+        extract = define_extract_from_json(microdata_fixtures_path / "example_extract.json")
     assert exc_info.value.args[0] == (
         "The IPUMS API version specified in the extract definition is not supported by this version of ipumspy."
     )
 
 
-def test_extract_from_api_response_json(fixtures_path: Path):
+def test_extract_from_api_response_json(microdata_fixtures_path: Path):
     """
     Ensure extract object can be created from a dict that contains
     variable-level features as nested dicts
     """
     extract = define_extract_from_json(
-        fixtures_path / "example_fancy_extract_from_api_v2.json"
+        microdata_fixtures_path / "example_fancy_extract_from_api_v2.json"
     )
     for item in extract:
         assert item.collection == "usa"
@@ -801,20 +801,20 @@ def test_extract_from_api_response_json(fixtures_path: Path):
         assert item.api_version == 2
 
 
-def test_save_extract_as_json(fixtures_path: Path):
+def test_save_extract_as_json(microdata_fixtures_path: Path):
     # remove the test saved extract if it exists
-    if Path(fixtures_path / "test_saved_extract.json").exists():
-        os.remove(str(Path(fixtures_path / "test_saved_extract.json")))
+    if Path(microdata_fixtures_path / "test_saved_extract.json").exists():
+        os.remove(str(Path(microdata_fixtures_path / "test_saved_extract.json")))
 
     # reconstitute the extract object from pickle
-    with open(fixtures_path / "usa_00196_extract_obj.pkl", "rb") as infile:
+    with open(microdata_fixtures_path / "usa_00196_extract_obj.pkl", "rb") as infile:
         extract = pickle.load(infile)
 
     # save it as an extract
-    save_extract_as_json(extract, fixtures_path / "test_saved_extract.json")
+    save_extract_as_json(extract, microdata_fixtures_path / "test_saved_extract.json")
 
-    assert Path(fixtures_path / "test_saved_extract.json").exists()
-    os.remove(str(Path(fixtures_path / "test_saved_extract.json")))
+    assert Path(microdata_fixtures_path / "test_saved_extract.json").exists()
+    os.remove(str(Path(microdata_fixtures_path / "test_saved_extract.json")))
 
 
 def test_variable_update():

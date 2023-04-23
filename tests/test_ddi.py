@@ -8,34 +8,34 @@ from ipumspy import ddi, readers
 
 
 @pytest.fixture(scope="module")
-def cps_ddi(fixtures_path: Path) -> ddi.Codebook:
-    return readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
+def cps_ddi(microdata_fixtures_path: Path) -> ddi.Codebook:
+    return readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
 
 
 @pytest.fixture(scope="module")
-def cps_df(fixtures_path: Path, cps_ddi: ddi.Codebook) -> pd.DataFrame:
-    return readers.read_microdata(cps_ddi, fixtures_path / "cps_00006.csv.gz")
+def cps_df(microdata_fixtures_path: Path, cps_ddi: ddi.Codebook) -> pd.DataFrame:
+    return readers.read_microdata(cps_ddi, microdata_fixtures_path / "cps_00006.csv.gz")
 
 
 @pytest.fixture(scope="function")
-def cps_ddi2(fixtures_path: Path) -> ddi.Codebook:
-    return readers.read_ipums_ddi(fixtures_path / "cps_00361.xml")
+def cps_ddi2(microdata_fixtures_path: Path) -> ddi.Codebook:
+    return readers.read_ipums_ddi(microdata_fixtures_path / "cps_00361.xml")
 
 
 @pytest.fixture(scope="function")
-def cps_df2(fixtures_path: Path, cps_ddi2: ddi.Codebook) -> pd.DataFrame:
-    return readers.read_microdata(cps_ddi2, fixtures_path / "cps_00361.dat.gz")
+def cps_df2(microdata_fixtures_path: Path, cps_ddi2: ddi.Codebook) -> pd.DataFrame:
+    return readers.read_microdata(cps_ddi2, microdata_fixtures_path / "cps_00361.dat.gz")
 
 
 @pytest.fixture(scope="function")
-def cps_ddi_hierarchical(fixtures_path: Path) -> ddi.Codebook:
-    return readers.read_ipums_ddi(fixtures_path / "cps_00421.xml")
+def cps_ddi_hierarchical(microdata_fixtures_path: Path) -> ddi.Codebook:
+    return readers.read_ipums_ddi(microdata_fixtures_path / "cps_00421.xml")
 
 
 # not implemented yet
 # @pytest.fixture(scope="function")
-# def cps_df_hierarchical(fixtures_path: Path, cps_ddi_hierarchical: ddi.Codebook) -> pd.DataFrame:
-#     return readers.read_microdata(cps_ddi_hierarchical, fixtures_path / "cps_00421.dat.gz")
+# def cps_df_hierarchical(microdata_fixtures_path: Path, cps_ddi_hierarchical: ddi.Codebook) -> pd.DataFrame:
+#     return readers.read_microdata(cps_ddi_hierarchical, microdata_fixtures_path / "cps_00421.dat.gz")
 
 
 def test_get_variable_info_rectangular(cps_ddi: ddi.Codebook):

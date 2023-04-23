@@ -42,9 +42,14 @@ def environment_variables():
 
 
 @pytest.fixture(scope="session")
-def fixtures_path() -> Path:
+def microdata_fixtures_path() -> Path:
     path = Path(__file__)
-    return path.absolute().parent / "tests" / "fixtures"
+    return path.absolute().parent / "tests" / "fixtures" / "microdata"
+
+@pytest.fixture(scope="session")
+def nhgis_fixtures_pat() -> Path:
+    path = Path(__file__)
+    return path.absolute().parent / "test" / "fixtures" /  "nhgis"
 
 
 @pytest.fixture(scope="session")

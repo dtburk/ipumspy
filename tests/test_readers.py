@@ -165,63 +165,63 @@ def _assert_cps_hierarchical_subset_dict(data: Dict):
     assert (p_data["AGE"].iloc[:5] == np.array([36, 41, 5, 7, 50])).all()
 
 
-def test_can_read_herarchical_df_dat_gz(fixtures_path: Path):
+def test_can_read_herarchical_df_dat_gz(microdata_fixtures_path: Path):
     """
     Confirm that we can read hierarchical microdata ino a single data frame
     in .dat format when it is gzipped
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00421.xml")
-    data = readers.read_hierarchical_microdata(ddi, fixtures_path / "cps_00421.dat.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00421.xml")
+    data = readers.read_hierarchical_microdata(ddi, microdata_fixtures_path / "cps_00421.dat.gz")
 
     _assert_cps_00421_df
 
 
-def test_can_read_herarchical_dict_dat_gz(fixtures_path: Path):
+def test_can_read_herarchical_dict_dat_gz(microdata_fixtures_path: Path):
     """
     Confirm that we can read hierarchical microdata ino a dictionary of data frames
     in .dat format when it is gzipped
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00421.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00421.xml")
     data = readers.read_hierarchical_microdata(
-        ddi, fixtures_path / "cps_00421.dat.gz", as_dict=True
+        ddi, microdata_fixtures_path / "cps_00421.dat.gz", as_dict=True
     )
 
     _assert_cps_00421_dict
 
 
-def test_can_read_rectangular_dat_gz(fixtures_path: Path):
+def test_can_read_rectangular_dat_gz(microdata_fixtures_path: Path):
     """
     Confirm that we can read rectangular microdata in .dat format
     when it is gzipped
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00006.dat.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00006.dat.gz")
 
     _assert_cps_000006(data)
 
 
-def test_can_read_rectangular_csv_gz(fixtures_path: Path):
+def test_can_read_rectangular_csv_gz(microdata_fixtures_path: Path):
     """
     Confirm that we can read rectangular microdata in .csv format
     when it is gzipped
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00006.csv.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00006.csv.gz")
 
     _assert_cps_000006(data)
 
 
-def test_can_read_rectangular_dat(fixtures_path: Path):
+def test_can_read_rectangular_dat(microdata_fixtures_path: Path):
     """
     Confirm that we can read rectangular microdata in .dat format
     when it is not gzipped
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
 
     ## Un gzip the file in our fixtures
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        with gzip.open(fixtures_path / "cps_00006.dat.gz", "rb") as infile:
+        with gzip.open(microdata_fixtures_path / "cps_00006.dat.gz", "rb") as infile:
             with open(tmpdir / "cps_00006.dat", "wb") as outfile:
                 for chunk in iter(partial(infile.read, 8192), b""):
                     outfile.write(chunk)
@@ -231,24 +231,24 @@ def test_can_read_rectangular_dat(fixtures_path: Path):
     _assert_cps_000006(data)
 
 
-def test_can_read_rectangular_parquet(fixtures_path: Path):
+def test_can_read_rectangular_parquet(microdata_fixtures_path: Path):
     """
     Confirm that we can read rectangular microdata in .parquet format
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00006.parquet")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00006.parquet")
 
     _assert_cps_000006(data)
 
 
 @pytest.mark.slow
-def test_can_read_rectangular_dat_gz_chunked(fixtures_path: Path):
+def test_can_read_rectangular_dat_gz_chunked(microdata_fixtures_path: Path):
     """
     Confirm that we can read rectangular microdata in .dat format when chunked
     """
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
     data = readers.read_microdata_chunked(
-        ddi, fixtures_path / "cps_00006.dat.gz", chunksize=1
+        ddi, microdata_fixtures_path / "cps_00006.dat.gz", chunksize=1
     )
 
     total_length = 0
@@ -267,7 +267,7 @@ def test_can_read_rectangular_dat_gz_chunked(fixtures_path: Path):
     assert total_length == 7668
 
 
-def test_read_microdata_custom_dtype(fixtures_path):
+def test_read_microdata_custom_dtype(microdata_fixtures_path):
     """
     Make sure use can choose custom dtype in microdata reader.
     """
@@ -287,8 +287,8 @@ def test_read_microdata_custom_dtype(fixtures_path):
         "AGE": pd.Int64Dtype(),
     }
 
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00361.xml")
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00361.dat.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00361.xml")
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00361.dat.gz")
     assert data.dtypes.to_dict() == pandas_types
 
     # custom dtype
@@ -307,17 +307,17 @@ def test_read_microdata_custom_dtype(fixtures_path):
         "AGE": np.float64,
     }
 
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00361.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00361.xml")
     dtype = ddi.get_all_types(type_format="pandas_type_efficient", string_pyarrow=True)
-    data = readers.read_microdata(ddi, fixtures_path / "cps_00361.dat.gz", dtype=dtype)
+    data = readers.read_microdata(ddi, microdata_fixtures_path / "cps_00361.dat.gz", dtype=dtype)
     assert data.dtypes.to_dict() == pandas_types_efficient
 
     with pytest.raises(ValueError):
         # should raise Value when parquet and dtype != None
-        readers.read_microdata(ddi, fixtures_path / "cps_00006.parquet", dtype=dtype)
+        readers.read_microdata(ddi, microdata_fixtures_path / "cps_00006.parquet", dtype=dtype)
 
 
-def test_read_microdata_chunked_custom_dtype(fixtures_path):
+def test_read_microdata_chunked_custom_dtype(microdata_fixtures_path):
     """
     Make sure use can choose custom dtype in microdata reader.
     """
@@ -337,8 +337,8 @@ def test_read_microdata_chunked_custom_dtype(fixtures_path):
         "AGE": pd.Int64Dtype(),
     }
 
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00361.xml")
-    data = readers.read_microdata_chunked(ddi, fixtures_path / "cps_00361.dat.gz")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00361.xml")
+    data = readers.read_microdata_chunked(ddi, microdata_fixtures_path / "cps_00361.dat.gz")
     assert next(data).dtypes.to_dict() == pandas_types
 
     # custom dtype
@@ -357,10 +357,10 @@ def test_read_microdata_chunked_custom_dtype(fixtures_path):
         "AGE": np.float64,
     }
 
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00361.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00361.xml")
     dtype = ddi.get_all_types(type_format="pandas_type_efficient", string_pyarrow=True)
     data = readers.read_microdata_chunked(
-        ddi, fixtures_path / "cps_00361.dat.gz", dtype=dtype
+        ddi, microdata_fixtures_path / "cps_00361.dat.gz", dtype=dtype
     )
     assert next(data).dtypes.to_dict() == pandas_types_efficient
 
@@ -368,27 +368,27 @@ def test_read_microdata_chunked_custom_dtype(fixtures_path):
         # should raise Value when parquet and dtype != None
         next(
             readers.read_microdata_chunked(
-                ddi, fixtures_path / "cps_00006.parquet", dtype=dtype
+                ddi, microdata_fixtures_path / "cps_00006.parquet", dtype=dtype
             )
         )
 
 
-def test_read_extract_description(fixtures_path: Path):
+def test_read_extract_description(microdata_fixtures_path: Path):
     """
     Make sure that equivalent extracts can be read as either json or yaml and that
     if a badly formatted extract is provided, we raise a ValueError
     """
     yaml_extract = readers.read_extract_description(
-        fixtures_path / "example_extract_v2.yml"
+        microdata_fixtures_path / "example_extract_v2.yml"
     )
     json_extract = readers.read_extract_description(
-        fixtures_path / "example_extract_v2.json"
+        microdata_fixtures_path / "example_extract_v2.json"
     )
     from_api_extract = readers.read_extract_description(
-        fixtures_path / "example_extract_from_api_v2.json"
+        microdata_fixtures_path / "example_extract_from_api_v2.json"
     )
     from_api_extract_fancy = readers.read_extract_description(
-        fixtures_path / "example_fancy_extract_from_api_v2.json"
+        microdata_fixtures_path / "example_fancy_extract_from_api_v2.json"
     )
 
     # Make sure they are the same
@@ -440,24 +440,24 @@ def test_read_extract_description(fixtures_path: Path):
 
     # Check that something that is neither YAML nor JSON yields a ValueError
     with pytest.raises(ValueError):
-        readers.read_extract_description(fixtures_path / "cps_00006.xml")
+        readers.read_extract_description(microdata_fixtures_path / "cps_00006.xml")
 
 
-def test_subset_option(fixtures_path: Path):
+def test_subset_option(microdata_fixtures_path: Path):
     """Does subset option function for all data structures"""
     # first for rectangular
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00006.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00006.xml")
     data = readers.read_microdata(
-        ddi, fixtures_path / "cps_00006.dat.gz", subset=["STATEFIP", "INCTOT"]
+        ddi, microdata_fixtures_path / "cps_00006.dat.gz", subset=["STATEFIP", "INCTOT"]
     )
 
     _assert_cps_rectantular_subset(data)
 
     # then for hierarchical single data frame
-    ddi = readers.read_ipums_ddi(fixtures_path / "cps_00421.xml")
+    ddi = readers.read_ipums_ddi(microdata_fixtures_path / "cps_00421.xml")
     data = readers.read_hierarchical_microdata(
         ddi,
-        fixtures_path / "cps_00421.dat.gz",
+        microdata_fixtures_path / "cps_00421.dat.gz",
         subset=["RECTYPE", "MISH", "AGE"],
         as_dict=False,
     )
@@ -467,7 +467,7 @@ def test_subset_option(fixtures_path: Path):
     # then for hierarchical dictionary
     data = readers.read_hierarchical_microdata(
         ddi,
-        fixtures_path / "cps_00421.dat.gz",
+        microdata_fixtures_path / "cps_00421.dat.gz",
         subset=["RECTYPE", "MISH", "AGE"],
         as_dict=True,
     )
@@ -477,10 +477,10 @@ def test_subset_option(fixtures_path: Path):
     # ValueError should be raised when rectype not included in hierarchical subset
     with pytest.raises(ValueError):
         data = readers.read_hierarchical_microdata(
-            ddi, fixtures_path / "cps_00421.dat.gz", subset=["MISH", "AGE"]
+            ddi, microdata_fixtures_path / "cps_00421.dat.gz", subset=["MISH", "AGE"]
         )
 
     with pytest.raises(ValueError):
         data = readers.read_hierarchical_microdata(
-            ddi, fixtures_path / "cps_00421.dat.gz", subset=["MISH", "AGE"]
+            ddi, microdata_fixtures_path / "cps_00421.dat.gz", subset=["MISH", "AGE"]
         )

@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 import tempfile
 from pathlib import Path
 from typing import Iterator, List, Optional, Union, Dict
-from zipfile import *
+from zipfile import ZipFile
 
 import pandas as pd
 import numpy as np
@@ -24,7 +24,7 @@ import yaml
 
 from . import ddi as ddi_definitions
 from . import fileutils
-from .fileutils import open_or_yield, find_files_in, get_path_type, is_dir, is_zip, exists_in_os
+from .fileutils import open_or_yield, find_files_in, is_dir, is_zip, exists_in_os
 from .types import FilenameType
 
 
