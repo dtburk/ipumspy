@@ -24,7 +24,7 @@ import yaml
 
 from . import ddi as ddi_definitions
 from . import fileutils
-from .fileutils import open_or_yield, find_files_in, is_dir, is_zip, exists_in_os
+from .fileutils import open_or_yield, find_files_in, is_dir, is_zip, exists
 from .types import FilenameType
 
 
@@ -695,7 +695,7 @@ def read_nhgis_fwf(data_file,
 
     if do_file is None:
         warn_default_fwf_parsing()
-    elif not exists_in_os(do_file):
+    elif not exists(do_file):
         if do_file is not None:
             print(f"Could not find the provided do_file, {do_file}. \
                              Make sure the provided do_file exists or use 'col_positions' to specify \
@@ -706,7 +706,7 @@ def read_nhgis_fwf(data_file,
                   Use the 'do_file' argument to provide an associated .do file \
                   or use 'col_positions' to specify column positions manually.")
             warn_default_fwf_parsing()
-    elif exists_in_os(do_file):
+    elif exists(do_file):
         
         colspecs, names, dtype, replace_list = parse_nhgis_do_file(do_file)
 
