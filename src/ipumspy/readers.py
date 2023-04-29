@@ -500,35 +500,39 @@ def read_nhgis_codebook(
 def read_nhgis(
         data_file,
         file_select = None,
-        var_attrs = None, # (R-specific labeling)
-        remove_extra_header = None, # (might want, can elect to have informative header row -- if a user expects header row from NHGIS API)
+        remove_extra_header = None, # (might want, can elect to have informative header row -- if a user expects header row from NHGIS API) # if row after first is all strings, usually headerrow
         do_file = None,
-        file_type = None,
-        na = None, # (which vals are missing vals? important)
-        col_names = None, # caution
-        locale = None, # n/a? (R-specific? Check pandas docs)
-        verbose = True, # conditions
-
-        # show_col_types = None, # not something we need to implement
-        **kwargs # addt'l key word args for pandas, etc.
+        verbose = True,
+        na_values = None,
+        col_names = None,
+        **kwargs
 ):
+    
+    # data_file
+    # file_select
+    # remove_extra_header(?)
+    # do_file
+    # verbose
+    # **kwargs (na, col_names)
+
+    #TODO: What happens with header row and col_names? (perform sanity check)
+
     if not isinstance(data_file, str):
         raise ValueError("data_file must be a single string.")
     
-    if file_type is not None and (file_type not in ["csv", "dat"]):
+    # if data_file is neither .csv and .dat, that's not how NHGIS provided    
+    if "csv" not in data_file and "dat" not in data_file:
         raise ValueError("file_type must be one of csv or dat")
     
     if len(data_file) == 0:
         raise ValueError("Expected a data path but got an empty value.")
-
-    # data_file = Path(data_file)
     
     if not os.path.exists(data_file):
         raise ValueError("The data_file provided does not exist.")
     
     data_files = find_files_in(
         data_file,
-        name_ext = file_type if file_type is not None else "csv|dat",
+        name_ext = "csv|dat",
         multiple_ok=True,
         none_ok=True
     )
@@ -536,32 +540,46 @@ def read_nhgis(
     has_csv = any(re.search("csv$", f) for f in [data_files])
     has_dat = any(re.search("dat$", f) for f in [data_files])
 
-    if not has_csv and not has_dat:
-        if file_type is None:
-            msg = ".csv or .dat"
-        else:
-            msg = file_type
-        
-        raise ValueError(f"No {msg} files found in the provided data_file.")
+    if not has_csv and not has_dat: 
+        raise ValueError(f"No .csv or .dat files found in the provided data_file.")
     
     elif has_csv and has_dat:
         raise ValueError(f"Both .csv and .dat files found in the specified data_file. \
                          Use the file_type argument to specify which file type to load.")
+    
+    if na_values is not None:
+        print(f"Warning: read_nhgis() has specific handling for .csv or .dat null values. \
+              Supplying na_values = {na_values} may cause unexpected results.")
+        
+    if col_names is not None:
+        print(f"Warning: read_nhgis() has specific handling for .csv or .dat column names. \
+              Supplying col_names = {col_names} may cause unexpected results.")
 
     if has_csv:
+
+        # explicit update of kwargs to handle null values
+        kwargs.update({"na_values": na_values or ["","NA"]})
+
         data = read_nhgis_csv(
             data_file,
             file_select = file_select,
             verbose = verbose,
             *kwargs
         )
+        # TODO: 25 April 2023 -- ensure that the columns are being read with proper types
+        # retype columns after removing extra header, see if pandas has a helper func
+        # df.infer_objects() -- 
     else:
+
+        # explicit update of kwargs to handle null values in csv
+        kwargs.update({"na_values": na_values or ["","NA", "."]})
+
         data = read_nhgis_fwf(
             data_file,
             file_select = file_select,
             do_file = do_file,
             verbose = verbose,
-            **kwargs
+            *kwargs
         )
 
     return data # return pandas DataFrame
