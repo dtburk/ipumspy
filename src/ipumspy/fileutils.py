@@ -9,12 +9,12 @@ Utilities for interacting with the IPUMS file format
 import gzip
 import io
 import sys
-import zipfile
 import os
 import re
 from contextlib import contextmanager
 from pathlib import Path, PosixPath
 from typing import ContextManager, Optional
+from zipfile import ZipFile, is_zipfile
 
 from .types import FileType
 
@@ -189,19 +189,12 @@ def find_files_in(
         ValueError: If the provided filepath contains more than one fileor filepath itself is more than one item, i.e. the search is too broad.
     """
 
-    
-    # Check if it's a PosixPath object
-    # if isinstance(filepath, PosixPath):
-    #     # Get the absolute path
-    #     filepath = filepath.resolve()
-
     if len([filepath]) != 1:
         raise ValueError(f"{filepath} contains more than one path, provide a single path for file parsing.")
 
     if is_zip(filepath):
-        with zipfile.ZipFile(str(filepath), 'r') as f:
+        with ZipFile(str(filepath), 'r') as f:
             file_names = [name for name in f.namelist()]
-
     elif is_dir(filepath):
         filepath = Path(filepath)
         file_names = [f.name for f in filepath.iterdir()]
@@ -233,6 +226,11 @@ def find_files_in(
     if not multiple_ok and len(file_names) > 1:
         
         raise ValueError(f"Multiple files found, please use the file_select and name_ext arguments to specify which file you want to load:\n{file_names}")
+    
+    if multiple_ok == True and len(file_names) > 1:
+        
+        # for top-level read_nhgis() functionality
+        return file_names
 
     else: # return the standalone file path, or the first element from the list of file_names (in a list with len == 1)
         return str(file_names) if type(file_names) != list else str(file_names[0])
@@ -248,7 +246,7 @@ def is_zip(file):
     """
     Returns boolean whether a given file is a .zip archive
     """
-    return zipfile.is_zipfile(file)
+    return is_zipfile(file)
 
 def exists(file):
     """
