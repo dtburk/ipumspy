@@ -484,3 +484,23 @@ def test_subset_option(microdata_fixtures_path: Path):
         data = readers.read_hierarchical_microdata(
             ddi, microdata_fixtures_path / "cps_00421.dat.gz", subset=["MISH", "AGE"]
         )
+
+def test_read_nhgis(nhgis_fixtures_path: Path):
+
+    # File path DNE
+    with pytest.raises(ValueError):
+        df = readers.read_nhgis(nhgis_fixtures_path / "nhgis0707_does_not_exist.zip")
+
+    # read_nhgis(), multiple files found, csv
+    with pytest.raises(ValueError):
+        df = readers.read_nhgis(nhgis_fixtures_path / "nhgis0707_csv.zip")
+
+    # read_nhgis(), valid inputs, fwf
+    res = readers.read_nhgis("tests/fixtures/nhgis/nhgis0730_fixed.zip", file_select="state")
+    assert res.shape[0] == 84 # number of rows
+    assert res.shape[1] == 28 # number of cols
+
+    # read through a .zip, to another .zip
+    # testing on fixture nhgis_fixtures_path / nhgis0707_shape_small.zip breaks nhgis_read
+
+    

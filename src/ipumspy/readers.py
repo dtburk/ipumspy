@@ -500,11 +500,10 @@ def read_nhgis_codebook(
 def read_nhgis(
         data_file,
         file_select = None,
-        remove_extra_header = None, # (might want, can elect to have informative header row -- if a user expects header row from NHGIS API) # if row after first is all strings, usually headerrow
+        #remove_extra_header = None, # (might want, can elect to have informative header row -- if a user expects header row from NHGIS API) # if row after first is all strings, usually headerrow
         do_file = None,
         verbose = True,
-        na_values = None,
-        col_names = None,
+        #col_names = None,
         **kwargs
 ):
     
@@ -515,14 +514,8 @@ def read_nhgis(
     # verbose
     # **kwargs (na, col_names)
 
-    #TODO: What happens with header row and col_names? (perform sanity check)
-
     if not isinstance(data_file, str):
         raise ValueError("data_file must be a single string.")
-    
-    # if data_file is neither .csv and .dat, that's not how NHGIS provided    
-    if "csv" not in data_file and "dat" not in data_file:
-        raise ValueError("file_type must be one of csv or dat")
     
     if len(data_file) == 0:
         raise ValueError("Expected a data path but got an empty value.")
@@ -530,15 +523,17 @@ def read_nhgis(
     if not os.path.exists(data_file):
         raise ValueError("The data_file provided does not exist.")
     
+    # regardless of data_file, checks within zip, directory, or file
+    # if it matches csv or dat, it is considered valid
     data_files = find_files_in(
         data_file,
         name_ext = "csv|dat",
         multiple_ok=True,
-        none_ok=True
+        none_ok=False
     )
 
-    has_csv = any(re.search("csv$", f) for f in [data_files])
-    has_dat = any(re.search("dat$", f) for f in [data_files])
+    has_csv = any(re.search("csv$", f) for f in data_files)
+    has_dat = any(re.search("dat$", f) for f in data_files)
 
     if not has_csv and not has_dat: 
         raise ValueError(f"No .csv or .dat files found in the provided data_file.")
@@ -546,41 +541,37 @@ def read_nhgis(
     elif has_csv and has_dat:
         raise ValueError(f"Both .csv and .dat files found in the specified data_file. \
                          Use the file_type argument to specify which file type to load.")
-    
-    if na_values is not None:
-        print(f"Warning: read_nhgis() has specific handling for .csv or .dat null values. \
-              Supplying na_values = {na_values} may cause unexpected results.")
         
-    if col_names is not None:
-        print(f"Warning: read_nhgis() has specific handling for .csv or .dat column names. \
-              Supplying col_names = {col_names} may cause unexpected results.")
-
+    # if col_names is not None:
+    #     print(f"Warning: read_nhgis() has specific handling for .csv or .dat column names. \
+    #           Supplying col_names = {col_names} may cause unexpected results.")
+    
     if has_csv:
 
         # explicit update of kwargs to handle null values
-        kwargs.update({"na_values": na_values or ["","NA"]})
+        kwargs.update({"na_values": ["","NA"]})
 
         data = read_nhgis_csv(
             data_file,
             file_select = file_select,
             verbose = verbose,
-            *kwargs
+            **kwargs
         )
-        # TODO: 25 April 2023 -- ensure that the columns are being read with proper types
-        # retype columns after removing extra header, see if pandas has a helper func
-        # df.infer_objects() -- 
+        
     else:
 
         # explicit update of kwargs to handle null values in csv
-        kwargs.update({"na_values": na_values or ["","NA", "."]})
+        kwargs.update({"na_values": ["","NA", "."]})
 
         data = read_nhgis_fwf(
             data_file,
             file_select = file_select,
             do_file = do_file,
             verbose = verbose,
-            *kwargs
+            **kwargs
         )
+
+        # TODO: Note -- Extra header not an issue for ipumspy? Why not?
 
     return data # return pandas DataFrame
 
@@ -588,7 +579,7 @@ def read_nhgis_csv(data_file,
                    file_select = None,
                    verbose = True,
                    show_conditions = True,
-                   *kwargs
+                   **kwargs
                    ):
 
     """
@@ -652,7 +643,7 @@ def read_nhgis_csv(data_file,
 
     df = pd.read_csv(
         file_path,
-        *kwargs
+        **kwargs
     )
 
     if verbose:
@@ -672,7 +663,7 @@ def read_nhgis_fwf(data_file,
                    file_select = None,
                    do_file = None,
                    verbose = True,
-                   *kwargs
+                   **kwargs
                 ):
     
     file = find_files_in(
@@ -728,7 +719,7 @@ def read_nhgis_fwf(data_file,
         
         colspecs, names, dtype, replace_list = parse_nhgis_do_file(do_file)
 
-        df = pd.read_fwf(file_path, colspecs=colspecs, names=names, dtype=dtype)
+        df = pd.read_fwf(file_path, colspecs=colspecs, names=names, dtype=dtype, **kwargs)
 
         for column in replace_list:
             # adjust for implicit decimal
