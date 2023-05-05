@@ -58,7 +58,7 @@ def xml_opener(ddi_file: FileType):
 
         elif ddi_file.suffix == ".zip":
             # ZIP files are essentially directories, so perform the same check
-            with zipfile.ZipFile(ddi_file) as inzip:
+            with ZipFile(ddi_file) as inzip:
                 possible_files = [
                     zipinfo
                     for zipinfo in inzip.infolist()
@@ -209,6 +209,7 @@ def find_files_in(
     else:
         raise FileExistsError(f"Error: {filepath} does not exist in the user's OS.")
 
+    # TODO: Check if file_select is an index, then use as index if int / regex if str
 
     if file_select is not None and name_ext is not None:
         matches = [s for s in file_names if re.findall(f".*{file_select}.*{name_ext}$", s)]
@@ -225,7 +226,7 @@ def find_files_in(
     
     if not multiple_ok and len(file_names) > 1:
         
-        raise ValueError(f"Multiple files found, please use the file_select and name_ext arguments to specify which file you want to load:\n{file_names}")
+        raise ValueError(f"Multiple files found, please use the file_select argument to specify which file you want to load:\n{file_names}")
     
     if multiple_ok == True and len(file_names) > 1:
         
