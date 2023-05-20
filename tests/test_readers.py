@@ -500,7 +500,14 @@ def test_read_nhgis(nhgis_fixtures_path: Path):
     assert res.shape[0] == 84 # number of rows
     assert res.shape[1] == 28 # number of cols
 
-    # read through a .zip, to another .zip
-    # testing on fixture nhgis_fixtures_path / nhgis0707_shape_small.zip breaks nhgis_read
+    # read_nhgis(), valid inputs, csv
+    res = readers.read_nhgis("tests/fixtures/nhgis/nhgis0707_csv.zip")
+    assert res.shape[0] == 71 # number of rows
+    assert res.shape[1] == 25 # number of columns
+
+    # file_select that doesn't match any search terms
+    # e.g. no file has the word "state" in its name
+    with pytest.raises(ValueError):
+        res = readers.read_nhgis("tests/fixtures/nhgis/nhgis0707_csv.zip", file_select="state")
 
     
