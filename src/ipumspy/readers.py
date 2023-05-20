@@ -24,7 +24,7 @@ import yaml
 
 from . import ddi as ddi_definitions
 from . import fileutils
-from .fileutils import open_or_yield, find_files_in, is_dir, is_zip, exists
+from .fileutils import open_or_yield, find_files_in, is_dir, is_zip, is_shp, exists
 from .types import FilenameType
 
 
@@ -500,19 +500,13 @@ def read_nhgis_codebook(
 def read_nhgis(
         data_file,
         file_select = None,
-        #remove_extra_header = None, # (might want, can elect to have informative header row -- if a user expects header row from NHGIS API) # if row after first is all strings, usually headerrow
         do_file = None,
         verbose = True,
-        #col_names = None,
         **kwargs
 ):
     
-    # data_file
-    # file_select
-    # remove_extra_header(?)
-    # do_file
-    # verbose
-    # **kwargs (na, col_names)
+    # TODO: Shapefile final days
+    # TODO: API 
 
     if not isinstance(data_file, str):
         raise ValueError("data_file must be a single string.")
@@ -521,7 +515,7 @@ def read_nhgis(
         raise ValueError("Expected a data path but got an empty value.")
     
     if not os.path.exists(data_file):
-        raise ValueError("The data_file provided does not exist.")
+        raise ValueError("The data_file provided does not exist.")  
     
     # regardless of data_file, checks within zip, directory, or file
     # if it matches csv or dat, it is considered valid
@@ -536,7 +530,7 @@ def read_nhgis(
     has_dat = any(re.search("dat$", f) for f in data_files)
 
     if not has_csv and not has_dat: 
-        raise ValueError(f"No .csv or .dat files found in the provided data_file.")
+        raise ValueError(f"No .csv or .dat files found in the provided path.")
     
     elif has_csv and has_dat:
         raise ValueError(f"Both .csv and .dat files found in the specified data_file. \
@@ -820,3 +814,109 @@ def parse_nhgis_do_file(file):
         
     return colspecs, names, dtype, replace_list
 
+def read_nhgis_shape(shapefile,
+                     file_select=None,
+                     verbose=False,
+                     **kwargs):
+    
+    if not isinstance(shapefile, str):
+        raise ValueError("data_file must be a single string.")
+
+    if len(shapefile) == 0:
+        raise ValueError("Expected a data path but got an empty value.")
+
+    if not os.path.exists(shapefile):
+        raise ValueError("The data_file provided does not exist.")
+    
+    shapefiles = find_files_in(
+        shapefile,
+        name_ext="zip|shp",
+        multiple_ok=True,
+        none_ok=False
+    )
+
+    has_zip = any(re.search("zip$", f) for f in shapefiles)
+    has_shp = any(re.search("shp$", f) for f in shapefiles)
+
+    if not has_zip and not has_shp:
+        raise ValueError("Neither zipfiles nor shapefiles were found in the specified directory. Please provide a different path.")
+    
+    # if we allow zipfiles and shapefiles to co-exist (worst case),
+    # then we want to check all shapefiles (in the zipfiles) and all provided shapefiles,
+    # and find the one that matches file_select
+
+    # if only shp
+    if has_shp and not has_zip:
+
+        shp_file = find_files_in(shapefile,
+                                 name_ext="shp",
+                                 file_select=file_select,
+                                 multiple_ok=False,
+                                 none_ok=False
+                                 )
+        
+        geopandas_warning()
+
+        return shp_file
+    
+    if has_zip and not has_shp:
+
+        # retrieve the single zipfile we're looking for
+        zipfile_containing_shp = find_files_in(shapefile,
+                                               "zip",
+                                               file_select=file_select,
+                                               multiple_ok=False,
+                                               none_ok=False)
+        
+        zip_dir = tempfile.TemporaryDirectory()
+
+        with ZipFile(shapefile, 'r') as zip_ref:
+            zip_ref.extract(zipfile_containing_shp, zip_dir.name)
+
+        shp_file = find_files_in(zip_dir.name,
+                                 "shp",
+                                 file_select=file_select,
+                                 multiple_ok=False,
+                                 none_ok=False)
+        
+        zip_dir.cleanup()
+        
+        geopandas_warning()
+
+        return shp_file
+    
+    if has_zip and has_shp:
+
+        # retrieve either the zipfile or shapefile we're looking for
+        data_file = find_files_in(shapefile,
+                                  name_ext="zip|shp",
+                                  file_select=file_select,
+                                  multiple_ok=False,
+                                  none_ok=False)
+        
+        # if the file is a zipfile, extract it
+        if is_zip(data_file):
+            
+            shp_file = find_files_in(data_file,
+                                     name_ext="shp",
+                                     file_select=file_select,
+                                     multiple_ok=False,
+                                     none_ok=False)
+            
+
+            
+            geopandas_warning()
+            
+            return shp_file
+
+        if is_shp(data_file):
+
+            geopandas_warning()
+
+            return data_file
+
+    print(shapefiles)
+
+def geopandas_warning():
+
+    print("Warning: shapefile loading support not yet implemented. The authors of ipumspy recommend GeoPandas for loading shapefiles.")
