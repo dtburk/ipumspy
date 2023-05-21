@@ -222,7 +222,7 @@ def find_files_in(
         file_names = matches
 
     if not none_ok and len(file_names) == 0:
-        raise ValueError(f"Did not find any files matching extension {name_ext} or matching the file_select {file_select} in the provided file path.")
+        raise ValueError(f"Did not find any files matching extension '{name_ext}' or matching the file_select '{file_select}' in the provided file path.")
     
     if not multiple_ok and len(file_names) > 1:
         
@@ -232,6 +232,12 @@ def find_files_in(
         
         # for top-level read_nhgis() functionality
         return file_names
+    
+    # if file contains both zip and shp files, it is an abnormal extract and we should raise an error
+    if name_ext == "zip|shp" and len(file_names) > 1:
+
+        raise NameError(f"Multiple files found with the given search, please use the file_select argument to specify which file you want to load:\n{file_names}. \
+                        \nIf you are seeing this message, there is a chance that the extract is not in its original form, i.e. there are zipfiles and shapefiles in the same directory with the same name. Check the extract and try again.")
 
     else: # return the standalone file path, or the first element from the list of file_names (in a list with len == 1)
         return str(file_names) if type(file_names) != list else str(file_names[0])
@@ -247,6 +253,7 @@ def is_zip(file):
     """
     Returns boolean whether a given file is a .zip archive
     """
+    # invoke zipfile.is_zipfile() on the file
     return is_zipfile(file)
 
 def exists(file):
@@ -254,3 +261,9 @@ def exists(file):
     Returns boolean whether a given file exists in the user's OS
     """
     return os.path.exists(file)
+
+def is_shp(file):
+    """
+    Returns boolean whether a given file is a .shp file
+    """
+    return file[-4:] == ".shp"

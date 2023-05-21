@@ -13,7 +13,7 @@ import json
 import re
 import warnings
 import xml.etree.ElementTree as ET
-import tempfile
+from tempfile import TemporaryDirectory
 from pathlib import Path
 from typing import Iterator, List, Optional, Union, Dict
 from zipfile import ZipFile
@@ -620,7 +620,7 @@ def read_nhgis_csv(data_file,
     if is_zip(data_file):
     # Cannot use fixed width format on a ZIP file
     # Must extract ZIP contents to allow for default format specification
-        csv_dir = tempfile.TemporaryDirectory()
+        csv_dir = TemporaryDirectory()
 
         with ZipFile(data_file, 'r') as zip_ref:
             zip_ref.extractall(csv_dir.name)
@@ -682,7 +682,7 @@ def read_nhgis_fwf(data_file,
     if is_zip(data_file):
     # Cannot use fixed width format on a ZIP file
     # Must extract ZIP contents to allow for default format specification
-        fwf_dir = tempfile.TemporaryDirectory()
+        fwf_dir = TemporaryDirectory()
 
         with ZipFile(data_file, 'r') as zip_ref:
             zip_ref.extractall(fwf_dir.name)
@@ -868,18 +868,20 @@ def read_nhgis_shape(shapefile,
                                                multiple_ok=False,
                                                none_ok=False)
         
-        zip_dir = tempfile.TemporaryDirectory()
+        # construct temporary directory to extract zipfile
+        zip_dir = TemporaryDirectory()
 
         with ZipFile(shapefile, 'r') as zip_ref:
             zip_ref.extract(zipfile_containing_shp, zip_dir.name)
 
-        shp_file = find_files_in(zip_dir.name,
+        # Construct path to the extracted file
+        file_path = os.path.join(zip_dir.name, zipfile_containing_shp)
+
+        shp_file = find_files_in(file_path,
                                  "shp",
                                  file_select=file_select,
                                  multiple_ok=False,
                                  none_ok=False)
-        
-        zip_dir.cleanup()
         
         geopandas_warning()
 
@@ -896,14 +898,21 @@ def read_nhgis_shape(shapefile,
         
         # if the file is a zipfile, extract it
         if is_zip(data_file):
+
+            # construct temporary directory to extract zipfile
+            zip_dir = TemporaryDirectory()
+
+            with ZipFile(shapefile, 'r') as zip_ref:
+                zip_ref.extract(data_file, zip_dir.name)
+
+            # Construct path to the extracted file
+            file_path = os.path.join(zip_dir.name, data_file)
             
-            shp_file = find_files_in(data_file,
+            shp_file = find_files_in(file_path,
                                      name_ext="shp",
                                      file_select=file_select,
                                      multiple_ok=False,
                                      none_ok=False)
-            
-
             
             geopandas_warning()
             
