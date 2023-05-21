@@ -209,8 +209,6 @@ def find_files_in(
     else:
         raise FileExistsError(f"Error: {filepath} does not exist in the user's OS.")
 
-    # TODO: Check if file_select is an index, then use as index if int / regex if str
-
     if file_select is not None and name_ext is not None:
         matches = [s for s in file_names if re.findall(f".*{file_select}.*{name_ext}$", s)]
         file_names = matches
@@ -220,9 +218,12 @@ def find_files_in(
     elif file_select is not None:
         matches = [s for s in file_names if re.findall(file_select, s)]
         file_names = matches
+    # syntactic sugar for indexing into the list of file_names
+    elif name_ext is not None and isinstance(file_select, int):
+        return file_names[file_select]
 
     if not none_ok and len(file_names) == 0:
-        raise ValueError(f"Did not find any files matching extension '{name_ext}' or matching the file_select '{file_select}' in the provided file path.")
+        raise ValueError(f"Did not find any files matching extension '{name_ext}' or matching the term '{file_select}' in the provided file path.")
     
     if not multiple_ok and len(file_names) > 1:
         

@@ -839,7 +839,7 @@ def read_nhgis_shape(shapefile,
     has_shp = any(re.search("shp$", f) for f in shapefiles)
 
     if not has_zip and not has_shp:
-        raise ValueError("Neither zipfiles nor shapefiles were found in the specified directory. Please provide a different path.")
+        raise ValueError("Neither zipfiles nor shapefiles were found in the specified directory.")
     
     # if we allow zipfiles and shapefiles to co-exist (worst case),
     # then we want to check all shapefiles (in the zipfiles) and all provided shapefiles,
