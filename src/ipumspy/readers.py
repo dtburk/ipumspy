@@ -565,8 +565,6 @@ def read_nhgis(
             **kwargs
         )
 
-        # TODO: Note -- Extra header not an issue for ipumspy? Why not?
-
     return data # return pandas DataFrame
 
 def read_nhgis_csv(data_file,
