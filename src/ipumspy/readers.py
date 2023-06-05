@@ -913,7 +913,9 @@ def read_nhgis_shape(shapefile,
                                      none_ok=False)
             
             geopandas_warning()
-            
+
+            # send back shp_file as a dataframe
+
             return shp_file
 
         if is_shp(data_file):

@@ -223,7 +223,7 @@ def find_files_in(
         return file_names[file_select]
 
     if not none_ok and len(file_names) == 0:
-        raise ValueError(f"Did not find any files matching extension '{name_ext}' or matching the term '{file_select}' in the provided file path.")
+        raise ValueError(f"Did not find any files with extension '{name_ext}' and matching the term '{file_select}' in the provided file path.")
     
     if not multiple_ok and len(file_names) > 1:
         
