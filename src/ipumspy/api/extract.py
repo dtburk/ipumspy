@@ -741,17 +741,22 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
             "timeSeriesTableLayout": self.time_series_table_layout,
             "geographicExtents": self.geographics_extents,
 
-            # datasets are built as a list of dicts
-            "datasets": self.datasets,
+            # datasets: "datasets": {"dataset name": {}, "dataset name": {}...}
+            "datasets": {
+                dataset.name: dataset.build() for dataset in self.datasets
+            },
 
             # time series tables are built as a list of dicts
-            "timeSeriesTables": self.time_series_tables,
+            "timeSeriesTables": {
+                table.name: table.build() for table in self.time_series_tables
+            },
 
-            # shapefiles are built as a list of dicts
+            # shapefiles are a list of names
             "shapefiles": self.shapefiles,
 
             "collection": self.collection,
             "version": self.api_version,
+
             **self.kwargs,
         }
 
