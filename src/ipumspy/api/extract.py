@@ -100,6 +100,107 @@ class Sample:
         else:
             raise KeyError(f"Sample has no attribute '{attribute}'.")
 
+@dataclass
+class Dataset:
+    """
+    IPUMS dataset object to include in an IPUMS NHGIS extract object.
+    """
+
+    name: str
+    """IPUMS dataset name"""
+    data_tables: Optional[List[str]] = field(default_factory=list)
+    """IPUMS dataset datatables"""
+    geog_levels: Optional[List[str]] = field(default_factory=list)
+    """IPUMS dataset geog_levels"""
+    years: Optional[List[str]] = field(default_factory=list)
+    """IPUMS dataset years"""
+    breakdown_values: Optional[List[str]] = field(default_factory=list)
+    """IPUMS dataset breakdown_values"""
+
+    # field() is a factory function which provides a default value for the field, in this case an empty list.
+
+    def __post_init__(self):
+        self.name = self.name.upper()
+
+    def update(self, attribute: str, value: Any):
+        """
+        Update Dataset features
+
+        Args:
+            attribute: name of the Dataset attribute to update
+            value: values with which to update the `attribute`
+        """
+        if hasattr(self, attribute):
+            setattr(self, attribute, value)
+        else:
+            raise KeyError(f"Dataset has no attribute '{attribute}'.")
+        
+    def build(self):
+
+        built_dataset = self.__dict__.copy()
+        # don't repeat the dataset name
+        built_dataset.pop("name")
+        # adhere to API schema camelCase convention
+        built_dataset["dataTables"] = built_dataset.pop("data_tables")
+        built_dataset["geogLevels"] = built_dataset.pop("geog_levels")
+        built_dataset["years"] = built_dataset.pop("years")
+        built_dataset["breakdownValues"] = built_dataset.pop("breakdown_values")
+
+        return built_dataset
+
+    def __str__(self):
+        """
+        For testing, print the dataset as a JSON string
+        """
+        return json.dumps(self.build())
+    
+@dataclass
+class TimeSeriesTable:
+    """
+    IPUMS TimeSeriesTable object to include in an IPUMS NHGIS extract object.
+    """
+    
+    name: str
+    """IPUMS TimeSeriesTable name"""
+    geog_levels: Optional[List[str]] = field(default_factory=list)
+    """IPUMS TimeSeriesTable geog_levels"""
+    years: Optional[List[str]] = field(default_factory=list)
+    """IPUMS TimeSeriesTable years"""
+
+    # field() is a factory function which provides a default value for the field, in this case an empty list.
+
+    def __post_init__(self):
+        self.name = self.name.upper()
+
+    def update(self, attribute: str, value: Any):
+        """
+        Update TimeSeriesTable features
+
+        Args:
+            attribute: name of the TimeSeriesTable attribute to update
+            value: values with which to update the `attribute`
+        """
+        if hasattr(self, attribute):
+            setattr(self, attribute, value)
+        else:
+            raise KeyError(f"TimeSeriesTable has no attribute '{attribute}'.")
+        
+    def build(self):
+
+        built_dataset = self.__dict__.copy()
+        # don't repeat the dataset name
+        built_dataset.pop("name")
+        # adhere to API schema camelCase convention
+        built_dataset["geogLevels"] = built_dataset.pop("geog_levels")
+        built_dataset["years"] = built_dataset.pop("years")
+
+        return built_dataset
+    
+    def __str__(self):
+        """
+        For testing, print the dataset as a JSON string
+        """
+        return json.dumps(self.build())
 
 def _unpack_samples_dict(dct: dict) -> List[Sample]:
     return [Sample(id=samp) for samp in dct.keys()]
@@ -565,6 +666,90 @@ class IpumsiExtract(BaseExtract, collection="ipumsi"):
             "variables": {
                 variable.name.upper(): variable.build() for variable in self.variables
             },
+            "collection": self.collection,
+            "version": self.api_version,
+            **self.kwargs,
+        }
+
+
+class NhgisExtract(BaseExtract, collection="nhgis"):
+
+    def __init__(
+        self,
+        datasets,
+        time_series_tables,
+        shapefiles,
+        time_series_table_layout: str = "time_by_column_layout",
+        geographics_extents: list = ["*"],
+        data_format: str = "fixed_width",
+        description: str = "My IPUMS NHGIS extract",
+        breakdown_and_data_type_layout: str = "single",
+        **kwargs
+    ):
+        """
+        Defining an IPUMS NHGIS extract.
+
+        Args:
+            datasets: list of IPUMS NHGIS Dataset objects
+            time_series_tables: list of IPUMS NHGIS TimeSeriesTable objects
+            shapefiles: list of IPUMS NHGIS ShapeFile objects
+            description: short description of your extract
+            data_format: fixed_width, csv_header, and csv_no_header supported. Contrary to name,
+                csv_no_header still provides a minimal header row when any datasets or time series tables are selected.
+            breakdown_and_data_type_layout: separate_files (split up each data type or breakdown combo into its own file),
+                and single_file (keep all data types and breakdowns in a single file)
+            time_series_table_layout: time_by_column_layout, time_by_row_layout, or time_by_file_layout
+            geographics_extents: list of geographic extents to include in extract
+        """
+
+        super().__init__()
+        self.datasets = datasets
+        self.time_series_tables = time_series_tables
+        self.shapefiles = shapefiles
+
+        if len(self.datasets) == 0 and len(self.time_series_tables) == 0 and len(self.shapefiles) == 0:
+            raise ValueError("At least one dataset, time series table, or shapefile must be specified.")
+        
+        self.description = description
+        self.data_format = data_format
+        self.breakdown_and_data_type_layout = breakdown_and_data_type_layout
+        self.time_series_table_layout = time_series_table_layout
+        self.geographics_extents = geographics_extents
+        self.collection = self.collection
+        """Name of an IPUMS data collection"""
+        self.api_version = (
+            self.extract_api_version(kwargs)
+            if len(kwargs.keys()) > 0
+            else self.api_version
+        )
+        """IPUMS API version number"""
+
+        # check kwargs for conflicts with defaults
+        self._kwarg_warning(kwargs)
+        # make the kwargs camelCase
+        self.kwargs = self._snake_to_camel(kwargs)
+
+    def build(self) -> Dict[str, Any]:
+        """
+        Convert the object into a dictionary to be passed to the IPUMS API
+        as a JSON string
+        """
+        return {
+            "description": self.description,
+            "dataFormat": self.data_format,
+            "breakdownAndDataTypeLayout": self.breakdown_and_data_type_layout,
+            "timeSeriesTableLayout": self.time_series_table_layout,
+            "geographicExtents": self.geographics_extents,
+
+            # datasets are built as a list of dicts
+            "datasets": self.datasets,
+
+            # time series tables are built as a list of dicts
+            "timeSeriesTables": self.time_series_tables,
+
+            # shapefiles are built as a list of dicts
+            "shapefiles": self.shapefiles,
+
             "collection": self.collection,
             "version": self.api_version,
             **self.kwargs,
