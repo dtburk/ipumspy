@@ -62,10 +62,6 @@ def _extract_and_collection(
             raise ValueError(
                 "If ``extract`` is not a BaseExtract, ``collection`` must be non-null"
             )
-        elif isinstance(extract, int): # subsequent calls to _extract_and_collection with nhgis
-            extract_id = extract
-        elif extract["extractDefinition"]["collection"] == "nhgis": # first call to _extract_and_collection with nhgis
-            extract_id = extract["number"]
         else:
             extract_id = extract
         
