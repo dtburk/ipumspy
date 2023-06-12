@@ -676,12 +676,12 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
 
     def __init__(
         self,
-        datasets,
-        time_series_tables,
-        shapefiles,
+        datasets: list = [],
+        time_series_tables: list = [],
+        shapefiles: list = [],
         time_series_table_layout: str = "time_by_column_layout",
-        geographics_extents: list = ["*"],
-        data_format: str = "fixed_width",
+        geographic_extents: list = [],
+        data_format: str = "csv_no_header",
         description: str = "My IPUMS NHGIS extract",
         breakdown_and_data_type_layout: str = "single_file",
         **kwargs
@@ -714,7 +714,7 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         self.data_format = data_format
         self.breakdown_and_data_type_layout = breakdown_and_data_type_layout
         self.time_series_table_layout = time_series_table_layout
-        self.geographics_extents = geographics_extents
+        self.geographic_extents = geographic_extents
         self.collection = self.collection
         """Name of an IPUMS data collection"""
         self.api_version = (
@@ -734,12 +734,12 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         Convert the object into a dictionary to be passed to the IPUMS API
         as a JSON string
         """
-        return {
+        built = {
             "description": self.description,
             "dataFormat": self.data_format,
             "breakdownAndDataTypeLayout": self.breakdown_and_data_type_layout,
             "timeSeriesTableLayout": self.time_series_table_layout,
-            "geographicExtents": self.geographics_extents,
+            "geographicExtents": self.geographic_extents,
 
             # datasets: "datasets": {"dataset name": {}, "dataset name": {}...}
             "datasets": {
@@ -759,6 +759,11 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
 
             **self.kwargs,
         }
+
+        if len(self.geographic_extents) == 0:
+            built.pop("geographicExtents")
+
+        return built
 
 
 def extract_from_dict(dct: Dict[str, Any]) -> Union[BaseExtract, List[BaseExtract]]:

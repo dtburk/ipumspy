@@ -7,7 +7,7 @@ from pprint import pprint
 import requests
 import json
 
-key=None
+key="59cba10d8a5da536fc06b59d00bc4f897b8f40a2b70ccad3905e84b2"
 
 # initialize client API
 ipums = IpumsApiClient(key)
@@ -39,18 +39,25 @@ print(time_series1)
 print("\n")
 
 # test nhgis extract building
-extract = NhgisExtract(
-    data_format="csv_header",
-    description="Wait, download_extract doesn't work quite yet",
-    datasets=[dataset, dataset2],
-    time_series_tables=[time_series1],
-    time_series_table_layout="time_by_file_layout",
-    shapefiles=["us_state_1790_tl2000"],
-    geographics_extents=["010"],
-    breakdown_and_data_type_layout="single_file",
-    version=2)
+# extract = NhgisExtract(
+#     data_format="csv_header",
+#     description="Wait, download_extract doesn't work quite yet",
+#     datasets=[dataset, dataset2],
+#     time_series_tables=[time_series1],
+#     time_series_table_layout="time_by_file_layout",
+#     shapefiles=["us_state_1790_tl2000"],
+#     geographics_extents=["010"],
+#     breakdown_and_data_type_layout="single_file",
+#     version=2)
 
-built = str(extract.build())
+x = NhgisExtract(
+    datasets = [Dataset("1990_STF1", ["NP1"], ["county"])],
+    time_series_tables = [TimeSeriesTable("A00", ["state"])],
+    shapefiles = [],
+    breakdown_and_data_type_layout="single_file"
+)
+
+# built = str(extract.build())
 
 # url = "https://api.ipums.org/extracts?collection=nhgis&version=2"
 headers = {"Authorization": key}
@@ -61,22 +68,22 @@ headers = {"Authorization": key}
 
 # pprint(result.json())
 
-r = requests.get(
-    "https://api.ipums.org/extracts/6?collection=nhgis&version=2",
-    headers=headers
-)
+# r = requests.get(
+#     "https://api.ipums.org/extracts/6?collection=nhgis&version=2",
+#     headers=headers
+# )
 
-extract = r.json()
+# extract = r.json()
 
-extract_links = extract["downloadLinks"]
+# extract_links = extract["downloadLinks"]
 
-for link in extract_links:
-    print(link, "\t", extract_links[link])
+# for link in extract_links:
+#     print(link, "\t", extract_links[link])
 
-r = requests.get(extract_links["tableData"]["url"], allow_redirects=True,
-                 headers=headers)
+# r = requests.get(extract_links["tableData"]["url"], allow_redirects=True,
+#                  headers=headers)
 
-open("/home/bendy/github/ipumspy/tests/nhgis0006_csv.zip", "wb").write(r.content)
+# open("/home/bendy/github/ipumspy/tests/nhgis0006_csv.zip", "wb").write(r.content)
 
 # print("\n\n")
 # print(built)
@@ -85,17 +92,17 @@ open("/home/bendy/github/ipumspy/tests/nhgis0006_csv.zip", "wb").write(r.content
 #     print(b, built[b])
 
 # # big kahuna, does it work?
-# ipums.submit_extract(extract)
+numb = ipums.submit_extract(extract, collection="nhgis")
 
-# # get extract status
+# # # get extract status
 # status = ipums.extract_status(extract)
 # print(status)
 
 # # # wait for extract to finish
-# ipums.wait_for_extract(extract)
+ipums.wait_for_extract(numb)
 
 # download extract
-# ipums.download_extract(extract, download_dir="/home/bendy/github/ipumspy/tests")
+ipums.download_extract(extract, download_dir="/home/bendy/github/ipumspy/tests/test_download/")
 
 # print(ipums.get_extract_info("6", collection="nhgis"))
 
