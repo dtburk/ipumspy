@@ -293,11 +293,15 @@ class IpumsApiClient:
         try:
             if collection == "nhgis":
                     # nhgis download links are formatted a little differently
-                    codebook_preview_url = download_links["codebookPreview"]["url"]
-                    tabledata_url = download_links["tableData"]["url"]
-                    gisData_url = download_links["gisData"]["url"]
+                    download_urls = []
 
-                    download_urls = [codebook_preview_url, tabledata_url, gisData_url]
+                    if "tableData" in download_links:
+                        tabledata_url = download_links["tableData"]["url"]
+                        download_urls.append(tabledata_url)
+
+                    if "gisData" in download_links:
+                        gisData_url = download_links["gisData"]["url"]
+                        download_urls.append(gisData_url)
 
             else:
                 # if the extract has been expired, the download_links element will be
