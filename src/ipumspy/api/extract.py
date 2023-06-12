@@ -108,9 +108,9 @@ class Dataset:
 
     name: str
     """IPUMS dataset name"""
-    data_tables: List[str] # required parameter
+    data_tables: List[str]
     """IPUMS dataset datatables: Required"""
-    geog_levels: List[str] # required parameter
+    geog_levels: List[str]
     """IPUMS dataset geog_levels: Required"""
     years: Optional[List[str]] = field(default_factory=list)
     """IPUMS dataset years"""
