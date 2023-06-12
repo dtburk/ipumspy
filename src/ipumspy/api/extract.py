@@ -757,7 +757,7 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
             "collection": self.collection,
             "version": self.api_version,
 
-            **self.kwargs
+            **self.kwargs,
         }
 
 

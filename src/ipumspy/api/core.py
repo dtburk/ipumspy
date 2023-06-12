@@ -52,19 +52,15 @@ def retry_on_transient_error(func):
 def _extract_and_collection(
     extract: Union[BaseExtract, int], collection: Optional[str]
 ) -> Tuple[int, str]:
-    if isinstance(extract, BaseExtract): 
-        # maybe just check the collection here and check that the extract_id is being set correctly?
-        # something tells me it might not be working as intended for nhgis
+    if isinstance(extract, BaseExtract):
         extract_id = extract.extract_id
         collection = extract.collection
     else:
+        extract_id = extract
         if not collection:
             raise ValueError(
                 "If ``extract`` is not a BaseExtract, ``collection`` must be non-null"
             )
-        else:
-            extract_id = extract
-        
     return extract_id, collection
 
 
@@ -295,33 +291,24 @@ class IpumsApiClient:
 
         download_links = response.json()["downloadLinks"]
         try:
-            if collection == "nhgis":
-                # nhgis download links are formatted a little differently
-                codebook_preview_url = download_links["codebookPreview"]["url"]
-                tabledata_url = download_links["tableData"]["url"]
-                gisData_url = download_links["gisData"]["url"]
+            # if the extract has been expired, the download_links element will be
+            # an empty dict
+            data_url = download_links["data"]["url"]
+            ddi_url = download_links["ddiCodebook"]["url"]
+            download_urls = [data_url, ddi_url]
 
-                download_urls = [codebook_preview_url, tabledata_url, gisData_url]
-
-            else:
-                # if the extract has been expired, the download_links element will be
-                # an empty dict
-                data_url = download_links["data"]["url"]
-                ddi_url = download_links["ddiCodebook"]["url"]
-                download_urls = [data_url, ddi_url]
-
-                if stata_command_file:
-                    _url = download_links["stataCommandFile"]["url"]
-                    download_urls.append(_url)
-                if spss_command_file:
-                    _url = download_links["spssCommandFile"]["url"]
-                    download_urls.append(_url)
-                if sas_command_file:
-                    _url = download_links["sasCommandFile"]["url"]
-                    download_urls.append(_url)
-                if r_command_file:
-                    _url = download_links["rCommandFile"]["url"]
-                    download_urls.append(_url)
+            if stata_command_file:
+                _url = download_links["stataCommandFile"]["url"]
+                download_urls.append(_url)
+            if spss_command_file:
+                _url = download_links["spssCommandFile"]["url"]
+                download_urls.append(_url)
+            if sas_command_file:
+                _url = download_links["sasCommandFile"]["url"]
+                download_urls.append(_url)
+            if r_command_file:
+                _url = download_links["rCommandFile"]["url"]
+                download_urls.append(_url)
 
         except KeyError:
             if isinstance(extract, BaseExtract):
