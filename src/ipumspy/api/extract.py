@@ -109,9 +109,9 @@ class Dataset:
     name: str
     """IPUMS dataset name"""
     data_tables: List[str] # required parameter
-    """IPUMS dataset datatables"""
+    """IPUMS dataset datatables: Required"""
     geog_levels: List[str] # required parameter
-    """IPUMS dataset geog_levels"""
+    """IPUMS dataset geog_levels: Required"""
     years: Optional[List[str]] = field(default_factory=list)
     """IPUMS dataset years"""
     breakdown_values: Optional[List[str]] = field(default_factory=list)
@@ -163,7 +163,7 @@ class TimeSeriesTable:
     name: str
     """IPUMS TimeSeriesTable name"""
     geog_levels: List[str] # required parameter
-    """IPUMS TimeSeriesTable geog_levels"""
+    """IPUMS TimeSeriesTable geog_levels: Required"""
     years: Optional[List[str]] = field(default_factory=list)
     """IPUMS TimeSeriesTable years"""
 
