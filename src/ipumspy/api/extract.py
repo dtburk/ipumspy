@@ -108,9 +108,9 @@ class Dataset:
 
     name: str
     """IPUMS dataset name"""
-    data_tables: Optional[List[str]] = field(default_factory=list)
+    data_tables: List[str] # required parameter
     """IPUMS dataset datatables"""
-    geog_levels: Optional[List[str]] = field(default_factory=list)
+    geog_levels: List[str] # required parameter
     """IPUMS dataset geog_levels"""
     years: Optional[List[str]] = field(default_factory=list)
     """IPUMS dataset years"""
@@ -162,7 +162,7 @@ class TimeSeriesTable:
     
     name: str
     """IPUMS TimeSeriesTable name"""
-    geog_levels: Optional[List[str]] = field(default_factory=list)
+    geog_levels: List[str] # required parameter
     """IPUMS TimeSeriesTable geog_levels"""
     years: Optional[List[str]] = field(default_factory=list)
     """IPUMS TimeSeriesTable years"""
@@ -716,6 +716,7 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         self.time_series_table_layout = time_series_table_layout
         self.geographic_extents = geographic_extents
         self.collection = self.collection
+
         """Name of an IPUMS data collection"""
         self.api_version = (
             self.extract_api_version(kwargs)
@@ -741,17 +742,17 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
             "timeSeriesTableLayout": self.time_series_table_layout,
             "geographicExtents": self.geographic_extents,
 
-            # datasets: "datasets": {"dataset name": {}, "dataset name": {}...}
+            # "datasets": {"dataset name": {}, "dataset name": {} ... }
             "datasets": {
                 dataset.name: dataset.build() for dataset in self.datasets
             },
 
-            # time series tables are built as a list of dicts
+            # "timeSeriesTables": {"time series table name": {}, ... }
             "timeSeriesTables": {
                 table.name: table.build() for table in self.time_series_tables
             },
 
-            # shapefiles are a list of names
+            # shapefiles are a list of names (str's)
             "shapefiles": self.shapefiles,
 
             "collection": self.collection,
@@ -764,6 +765,12 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
             built.pop("geographicExtents")
 
         return built
+    
+    def __str__(self):
+        """
+        For testing, print the dataset as a JSON string
+        """
+        return json.dumps(self.build())
 
 
 def extract_from_dict(dct: Dict[str, Any]) -> Union[BaseExtract, List[BaseExtract]]:
