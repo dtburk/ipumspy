@@ -683,7 +683,7 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         geographics_extents: list = ["*"],
         data_format: str = "fixed_width",
         description: str = "My IPUMS NHGIS extract",
-        breakdown_and_data_type_layout: str = "single",
+        breakdown_and_data_type_layout: str = "single_file",
         **kwargs
     ):
         """
