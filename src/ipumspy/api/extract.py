@@ -225,6 +225,36 @@ def _unpack_variables_dict(dct: dict) -> List[Variable]:
         vars.append(var_obj)
     return vars
 
+def _unpack_datasets_dict(dct: dict) -> List[Dataset]:
+    """"
+    Following the example of _unpack_variables_dict, this function is intended to unpack the datasets dictionary
+    into a list of Dataset objects. This behavior is needed for get_extract_by_id for nhgis extracts. This
+    implementation is not complete and will need to be checked against API schema.
+    """
+    datasets = []
+    for dataset in dct.keys():
+        dataset_obj = Dataset(name=dataset, data_tables=dct[dataset]["dataTables"], geog_levels=dct[dataset]["geogLevels"])
+        if "years" in dct[dataset]:
+            dataset_obj.update("years", dct[dataset]["years"])
+        if "breakdownValues" in dct[dataset]:
+            dataset_obj.update("breakdown_values", dct[dataset]["breakdownValues"])
+        datasets.append(dataset_obj)
+    return datasets
+
+def _unpack_time_series_tables_dict(dct: dict) -> List[TimeSeriesTable]:
+    """"
+    Following the example of _unpack_variables_dict, this function is intended to unpack the time series tables dictionary
+    into a list of TimeSeriesTable objects. This behavior is needed for get_extract_by_id for nhgis extracts. This
+    implementation is not complete and will need to be checked against API schema.
+    """
+    time_series_tables = []
+    for time_series_table in dct.keys():
+        time_series_table_obj = TimeSeriesTable(name=time_series_table, geog_levels=dct[time_series_table]["geogLevels"])
+        if "years" in dct[time_series_table]:
+            time_series_table_obj.update("years", dct[time_series_table]["years"])
+        time_series_tables.append(time_series_table_obj)
+    
+    return time_series_tables
 
 class BaseExtract:
     _collection_to_extract: Dict[(str, str), Type[BaseExtract]] = {}
