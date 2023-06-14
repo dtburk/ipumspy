@@ -15,7 +15,7 @@ from ipumspy.ddi import Codebook
 from dataclasses import dataclass, field
 from .exceptions import IpumsExtractNotSubmitted
 
-
+step = 0 # remove after debugging done
 class DefaultCollectionWarning(Warning):
     pass
 
@@ -202,6 +202,14 @@ class TimeSeriesTable:
         """
         return json.dumps(self.build())
 
+def present_in_extract_info(item) -> bool:
+        """
+        Quick helper function that checks if an item is present in the extract info
+        Makes code for build() more readable
+        """
+        if item is not None and len(item) > 0:
+            return True
+
 def _unpack_samples_dict(dct: dict) -> List[Sample]:
     return [Sample(id=samp) for samp in dct.keys()]
 
@@ -359,6 +367,12 @@ class BaseExtract:
             return args
         elif isinstance(list_arg, dict) and arg_obj is Sample:
             args = _unpack_samples_dict(list_arg)
+            return args
+        elif isinstance(list_arg, dict) and arg_obj is Dataset:
+            args = _unpack_datasets_dict(list_arg)
+            return args
+        elif isinstance(list_arg, dict) and arg_obj is TimeSeriesTable:
+            args = _unpack_time_series_tables_dict(list_arg)
             return args
         # Make sure extracts don't get built with duplicate variables or samples
         # if the argument is a list of objects, make sure there are not objects with duplicate names
@@ -706,14 +720,14 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
 
     def __init__(
         self,
-        datasets: list = [Dataset],
-        time_series_tables: list = [TimeSeriesTable],
-        shapefiles: list = [str],
-        time_series_table_layout: str = "time_by_column_layout",
-        geographic_extents: list = [],
         data_format: str = "csv_no_header",
         description: str = "My IPUMS NHGIS extract",
-        breakdown_and_data_type_layout: str = "single_file",
+        datasets: Optional[Union[List[str], List[Dataset]]] = [],
+        timeSeriesTables: Optional[Union[List[str], List[TimeSeriesTable]]] = [],
+        shapefiles: list = [],
+        timeSeriesTableLayout: str = "time_by_column_layout",
+        geographicExtents: list = [],
+        breakdownAndDataTypeLayout: str = "single_file",
         **kwargs
     ):
         """
@@ -733,8 +747,10 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         """
 
         super().__init__()
-        self.datasets = datasets
-        self.time_series_tables = time_series_tables
+
+
+        self.datasets = self._validate_list_args(datasets, Dataset)
+        self.time_series_tables = self._validate_list_args(timeSeriesTables, TimeSeriesTable)
         self.shapefiles = shapefiles
 
         if len(self.datasets) == 0 and len(self.time_series_tables) == 0 and len(self.shapefiles) == 0:
@@ -742,9 +758,9 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         
         self.description = description
         self.data_format = data_format
-        self.breakdown_and_data_type_layout = breakdown_and_data_type_layout
-        self.time_series_table_layout = time_series_table_layout
-        self.geographic_extents = geographic_extents
+        self.breakdown_and_data_type_layout = breakdownAndDataTypeLayout
+        self.time_series_table_layout = timeSeriesTableLayout
+        self.geographic_extents = geographicExtents
         self.collection = self.collection
 
         """Name of an IPUMS data collection"""
@@ -760,39 +776,51 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         # make the kwargs camelCase
         self.kwargs = self._snake_to_camel(kwargs)
 
+    
+
     def build(self) -> Dict[str, Any]:
         """
         Convert the object into a dictionary to be passed to the IPUMS API
         as a JSON string
         """
-        built = {
-            "description": self.description,
-            "dataFormat": self.data_format,
-            "breakdownAndDataTypeLayout": self.breakdown_and_data_type_layout,
-            "timeSeriesTableLayout": self.time_series_table_layout,
-            "geographicExtents": self.geographic_extents,
 
+        built = {}
+
+        # since we only need 1 of datasets, timeSeriesTables, or shapefiles to be non-empty,
+        # we only include dict keys for non-empty lists
+
+        if present_in_extract_info(self.datasets):
             # "datasets": {"dataset name": {}, "dataset name": {} ... }
-            "datasets": {
+            datasets = {
                 dataset.name: dataset.build() for dataset in self.datasets
-            },
-
+            }
+            built["datasets"] = datasets
+        
+        if present_in_extract_info(self.time_series_tables):
             # "timeSeriesTables": {"time series table name": {}, ... }
-            "timeSeriesTables": {
+            time_series_tables = {
                 table.name: table.build() for table in self.time_series_tables
-            },
+            }
+            built["timeSeriesTables"] = time_series_tables
+            built["timeSeriesTableLayout"] = self.time_series_table_layout
+            
+        if present_in_extract_info(self.shapefiles):
+            built["shapefiles"] = self.shapefiles
 
-            # shapefiles are a list of names (str's)
-            "shapefiles": self.shapefiles,
+        if present_in_extract_info(self.geographic_extents):
+            built["geographicExtents"] = self.geographic_extents
 
-            "collection": self.collection,
-            "version": self.api_version,
+        if present_in_extract_info(self.breakdown_and_data_type_layout):
+            built["breakdownAndDataTypeLayout"] = self.breakdown_and_data_type_layout
 
-            **self.kwargs,
-        }
+        # include kwargs if they are not empty
+        if present_in_extract_info(self.kwargs):
+            built.update(**self.kwargs)
 
-        if len(self.geographic_extents) == 0:
-            built.pop("geographicExtents")
+        built["description"] = self.description
+        built["dataFormat"] = self.data_format
+        built["collection"] = self.collection
+        built["version"] = self.api_version
 
         return built
     
@@ -800,7 +828,7 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
         """
         For testing, print the dataset as a JSON string
         """
-        return json.dumps(self.build())
+        return json.dumps(self.build(), indent=4)
 
 
 def extract_from_dict(dct: Dict[str, Any]) -> Union[BaseExtract, List[BaseExtract]]:
@@ -831,6 +859,14 @@ def extract_from_dict(dct: Dict[str, Any]) -> Union[BaseExtract, List[BaseExtrac
             dct["variables"] = _unpack_variables_dict(dct["variables"])
         else:
             dct["variables"] = [Variable(name=var) for var in dct["variables"]]
+        if isinstance(dct["timeSeriesTables"], dict):
+            dct["timeSeriesTables"] = _unpack_time_series_tables_dict(dct["timeSeriesTables"])
+        else:
+            dct["timeSeriesTables"] = [TimeSeriesTable(name=table) for table in dct["timeSeriesTables"]]
+        if isinstance(dct["shapefiles"], dict):
+            dct["datasets"] = _unpack_datasets_dict(dct["datasets"])
+        else:
+            dct["datasets"] = [Dataset(name=dataset) for dataset in dct["datasets"]]
 
         return BaseExtract._collection_to_extract[dct["collection"]](**dct)
 
