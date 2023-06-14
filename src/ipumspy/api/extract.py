@@ -187,14 +187,14 @@ class TimeSeriesTable:
         
     def build(self):
 
-        built_dataset = self.__dict__.copy()
-        # don't repeat the dataset name
-        built_dataset.pop("name")
+        built_time_series_table = self.__dict__.copy()
+        # don't repeat the time series table name
+        built_time_series_table.pop("name")
         # adhere to API schema camelCase convention
-        built_dataset["geogLevels"] = built_dataset.pop("geog_levels")
-        built_dataset["years"] = built_dataset.pop("years")
+        built_time_series_table["geogLevels"] = built_time_series_table.pop("geog_levels")
+        built_time_series_table["years"] = built_time_series_table.pop("years")
 
-        return built_dataset
+        return built_time_series_table
     
     def __str__(self):
         """
@@ -676,9 +676,9 @@ class NhgisExtract(BaseExtract, collection="nhgis"):
 
     def __init__(
         self,
-        datasets: list = [],
-        time_series_tables: list = [],
-        shapefiles: list = [],
+        datasets: list = [Dataset],
+        time_series_tables: list = [TimeSeriesTable],
+        shapefiles: list = [str],
         time_series_table_layout: str = "time_by_column_layout",
         geographic_extents: list = [],
         data_format: str = "csv_no_header",

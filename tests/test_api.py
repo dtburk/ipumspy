@@ -652,6 +652,18 @@ def test_download_extract(live_api_client: IpumsApiClient, tmpdir: Path):
     assert (tmpdir / "usa_00196.dat.gz").exists()
     assert (tmpdir / "usa_00196.xml").exists()
 
+@pytest.mark.vcr
+def test_download_nhgis_extract(live_api_client: IpumsApiClient, tmpdir: Path):
+    """
+    Confirm that NHGIS extract data and attendant files can be downloaded.
+    This behavior is slightly different than microdata downloads
+    """
+
+    live_api_client.download_extract(
+        collection="nhgis", extract=35, download_dir=tmpdir
+    )
+    assert (tmpdir / "nhgis0035_csv.zip").exists()
+
 
 @pytest.mark.vcr
 def test_download_expired_extract(live_api_client: IpumsApiClient, tmpdir: Path):
