@@ -504,9 +504,16 @@ def read_nhgis(
         verbose = True,
         **kwargs
 ):
-    
-    # TODO: Shapefile final days
-    # TODO: API 
+    """
+    Args:
+        data_file: The path to the data file, it can be a zip file, a directory, or a single file.
+        file_select: Used as a regular expression to select files from a zip file or directory.
+        do_file: The path to the do file, if it exists. (only for fixed-width file reading)
+        verbose: Whether to print out the data description
+        kwargs: keyword args to be passed to pandas
+    Returns:
+        A pandas dataframe with the formatted data
+    """
 
     if not isinstance(data_file, str):
         raise ValueError("data_file must be a single string.")
@@ -536,10 +543,6 @@ def read_nhgis(
         raise ValueError(f"Both .csv and .dat files found in the specified data_file. \
                          Use the file_type argument to specify which file type to load.")
         
-    # if col_names is not None:
-    #     print(f"Warning: read_nhgis() has specific handling for .csv or .dat column names. \
-    #           Supplying col_names = {col_names} may cause unexpected results.")
-    
     if has_csv:
 
         # explicit update of kwargs to handle null values
@@ -590,12 +593,6 @@ def read_nhgis_csv(data_file,
         Raises:
             OSError: If the passed path does not exist
         """
-
-    # File Types: .csv, .txt ("codebook" -- wetware-friendly info, always present, doesn't help parsing),
-    #             .dat (only provided with fixed-width file extracts -- comes with many files, including .txt -- .do file used for parsing) 
-
-    # Reading .dat file, need .do file
-    # Read nhgis can handle .csv and .dat, if .dat look for .do, if .csv just read it
 
     file = find_files_in(
         data_file,
