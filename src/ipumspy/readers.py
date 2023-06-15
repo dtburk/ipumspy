@@ -507,6 +507,7 @@ def read_nhgis(
     """
     Args:
         data_file: The path to the data file, it can be a zip file, a directory, or a single file.
+            It is expected to contain a csv or dat file, use nhgis_read_shape() for shapefiles.
         file_select: Used as a regular expression to select files from a zip file or directory.
         do_file: The path to the do file, if it exists. (only for fixed-width file reading)
         verbose: Whether to print out the data description
@@ -586,9 +587,9 @@ def read_nhgis_csv(data_file,
         Args:
             data_file: The path as described above. 
             Can be one of three options:
-            * Zip containing .dat or .csv files (standard data delivery for NHGIS)
-            * Directory containing .dat or .csv files
-            * Direct path to .dat or .csv file
+            * Zip containing .csv files (standard data delivery for NHGIS)
+            * Directory containing .csv files
+            * Direct path to .csv file
 
         Raises:
             OSError: If the passed path does not exist
@@ -655,6 +656,29 @@ def read_nhgis_fwf(data_file,
                    **kwargs
                 ):
     
+    """
+        Generate a pd Dataframe from a .dat file, prompt use to select file amongst several,
+        if necessary. A .do is required to read the file, and is expected to be in the same
+        directory as the .dat file. The path to the .do file can be passed as an argument, if 
+        it is not in the same directory as the .dat file.
+
+        Args:
+            data_file: The path as described above.
+            Can be one of three options:
+            - Zip containing .dat files (standard data delivery for NHGIS)
+            - Directory containing .dat files
+            - Direct path to .dat file
+            file_select: Used as a regular expression to select files from a zip file or directory.
+            do_file: The path to the do file, if it exists. (only for fixed-width file reading)
+            verbose: Whether to print out the data description
+
+        Raises:
+            OSError: If the passed path does not exist
+
+        Returns:
+            A pandas dataframe with the formatted data
+
+    """
     file = find_files_in(
         data_file,
         name_ext="dat",
